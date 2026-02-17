@@ -1426,9 +1426,9 @@ function MeadBrewingApp() {
   // ─── Batch List ────────────────────────────────────────────────────────
 
   const BatchCard = ({ batch, onClick }) => {
-    const totalTasks = batch.schedule?.reduce((sum, s) => sum + s.tasks.length, 0) || 1;
-    const completedTasks = (batch.completedSteps || []).length;
-    const pct = Math.min(100, Math.round((completedTasks / totalTasks) * 100));
+    const total = batch.schedule?.length || 1;
+    const completed = (batch.completedSteps || []).filter(s => typeof s === "number").length;
+    const pct = Math.min(100, Math.round((completed / total) * 100));
     const daysOld = Math.floor((Date.now() - new Date(batch.createdAt).getTime()) / 86400000);
 
     return (
@@ -1474,30 +1474,17 @@ function MeadBrewingApp() {
       setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
     };
 
-    const toggleTask = (stepIdx, taskIdx) => {
-      const key = `${stepIdx}-${taskIdx}`;
+    const toggleStep = (idx) => {
       const completed = Array.isArray(batch.completedSteps) ? [...batch.completedSteps] : [];
-      if (completed.includes(key)) {
-        updateBatch({ ...batch, completedSteps: completed.filter(k => k !== key) });
+      if (completed.includes(idx)) {
+        updateBatch({ ...batch, completedSteps: completed.filter(i => i !== idx) });
       } else {
-        updateBatch({ ...batch, completedSteps: [...completed, key] });
+        updateBatch({ ...batch, completedSteps: [...completed, idx] });
       }
     };
 
-    const isTaskDone = (stepIdx, taskIdx) => {
-      const key = `${stepIdx}-${taskIdx}`;
-      const completed = batch.completedSteps || [];
-      return completed.includes(key) || completed.includes(stepIdx);
-    };
-
-    const getStepProgress = (stepIdx, taskCount) => {
-      let done = 0;
-      const completed = batch.completedSteps || [];
-      if (completed.includes(stepIdx)) return taskCount;
-      for (let t = 0; t < taskCount; t++) {
-        if (completed.includes(`${stepIdx}-${t}`)) done++;
-      }
-      return done;
+    const isStepDone = (idx) => {
+      return (batch.completedSteps || []).includes(idx);
     };
 
     const toggleExpand = (idx) => {
@@ -1655,14 +1642,11 @@ function MeadBrewingApp() {
         <h2 style={styles.h2}>📅 Schedule</h2>
         <div style={styles.timeline}>
           {batch.schedule?.map((step, idx) => {
-            const taskCount = step.tasks.length;
-            const doneTasks = getStepProgress(idx, taskCount);
-            const allDone = doneTasks === taskCount;
+            const done = isStepDone(idx);
             const isToday = step.day <= daysOld && (idx === batch.schedule.length - 1 || batch.schedule[idx + 1].day > daysOld);
             const isExpanded = expandedSteps[idx] || false;
             const stepDate = new Date(new Date(batch.createdAt).getTime() + step.day * 86400000);
             const dateStr = stepDate.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-            const isPast = step.day < daysOld;
             const isFuture = step.day > daysOld;
             return (
               <div key={idx} style={{ marginBottom: 8, position: "relative" }}>
@@ -1673,64 +1657,43 @@ function MeadBrewingApp() {
                   border: isExpanded ? `1px solid ${COLORS.border}` : "1px solid transparent",
                   transition: "all 0.15s",
                 }}>
-                  {/* HEADER ROW — no onClick on this div */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", flexWrap: "wrap" }}>
-                    {/* ONLY the arrow is clickable for expand/collapse */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px" }}>
                     <div
                       onClick={() => toggleExpand(idx)}
-                      style={{
-                        cursor: "pointer", padding: "6px 8px", marginLeft: -6, marginRight: -2,
-                        borderRadius: 4, userSelect: "none", WebkitTapHighlightColor: "transparent",
-                      }}
+                      style={{ cursor: "pointer", padding: "4px 6px", marginLeft: -6, userSelect: "none", WebkitTapHighlightColor: "transparent" }}
                     >
                       <span style={{
                         color: COLORS.gold, fontSize: 13, display: "inline-block",
                         transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
                       }}>▶</span>
                     </div>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: allDone ? COLORS.success : isToday ? COLORS.goldLight : isFuture ? COLORS.text : COLORS.textMuted, flex: 1 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: done ? COLORS.success : isToday ? COLORS.goldLight : isFuture ? COLORS.text : COLORS.textMuted, flex: 1, textDecoration: done ? "line-through" : "none" }}>
                       {step.label}
                     </span>
                     <span style={{ fontSize: 12, color: isToday ? COLORS.goldLight : COLORS.textDim, fontWeight: isToday ? 700 : 400 }}>{dateStr}</span>
-                    {isToday && !allDone && <span style={styles.badge("gold")}>Today</span>}
-                    {allDone && <span style={styles.badge("green")}>Done</span>}
-                    {!allDone && doneTasks > 0 && (
-                      <span style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600 }}>{doneTasks}/{taskCount}</span>
-                    )}
+                    {isToday && !done && <span style={styles.badge("gold")}>Today</span>}
+                    <div
+                      onClick={() => toggleStep(idx)}
+                      style={{ cursor: "pointer", padding: "4px", WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <div style={{
+                        width: 24, height: 24, borderRadius: 5, flexShrink: 0,
+                        border: `2px solid ${done ? COLORS.success : COLORS.goldDim}`,
+                        background: done ? COLORS.success : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.15s",
+                      }}>
+                        {done && <span style={{ color: COLORS.bg, fontSize: 14, fontWeight: 900 }}>✓</span>}
+                      </div>
+                    </div>
                   </div>
-                  {/* TASK LIST — each task has its own checkbox click */}
                   {isExpanded && (
                     <div style={{ padding: "0 14px 14px 38px", borderTop: `1px solid ${COLORS.border}` }}>
-                      {step.tasks.map((t, ti) => {
-                        const taskDone = isTaskDone(idx, ti);
-                        return (
-                          <div
-                            key={ti}
-                            onClick={() => toggleTask(idx, ti)}
-                            style={{
-                              display: "flex", alignItems: "flex-start", gap: 10,
-                              padding: "8px 0", cursor: "pointer",
-                              borderBottom: ti < step.tasks.length - 1 ? `1px solid ${COLORS.border}40` : "none",
-                              WebkitTapHighlightColor: "transparent",
-                            }}
-                          >
-                            <div style={{
-                              width: 22, height: 22, borderRadius: 4, flexShrink: 0, marginTop: 1,
-                              border: `2px solid ${taskDone ? COLORS.success : COLORS.goldDim}`,
-                              background: taskDone ? COLORS.success : "transparent",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              transition: "all 0.15s",
-                            }}>
-                              {taskDone && <span style={{ color: COLORS.bg, fontSize: 13, fontWeight: 900 }}>✓</span>}
-                            </div>
-                            <span style={{
-                              fontSize: 14, color: taskDone ? COLORS.textDim : COLORS.text,
-                              textDecoration: taskDone ? "line-through" : "none",
-                              lineHeight: 1.6, transition: "all 0.15s",
-                            }}>{t}</span>
-                          </div>
-                        );
-                      })}
+                      {step.tasks.map((t, ti) => (
+                        <div key={ti} style={{ fontSize: 14, color: COLORS.textMuted, padding: "5px 0", lineHeight: 1.7 }}>
+                          <span style={{ color: COLORS.goldDim, marginRight: 8 }}>•</span>{t}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
