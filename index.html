@@ -643,31 +643,46 @@ function calcHoney(targetABV, sweetness, gallons) {
   return { og: og.toFixed(3), lbs: totalLbs.toFixed(1), lbsPerGallon: lbsPerGallon.toFixed(1) };
 }
 
-function generateSchedule(brewDays, targetABV, sweetness) {
+function generateSchedule(brewDays, targetABV, sweetness, fruitTiming, spiceTiming, hasFruit, hasSpice) {
   const totalDays = parseInt(brewDays) || 60;
   const isStrong = targetABV > 14;
   const isSession = targetABV <= 7;
   const schedule = [];
 
-  schedule.push({ day: 0, label: "Brew Day", tasks: ["Sanitize ALL equipment", "Heat water to ~100°F (not boiling!)", "Mix honey into water to create must", "Take OG reading with hydrometer", "Cool must to 65-75°F", "Pitch yeast", "Seal fermenter with airlock"], phase: "prep" });
+  const brewDayTasks = ["Sanitize ALL equipment", "Heat water to ~100°F (not boiling!)", "Mix honey into water to create must", "Take OG reading with hydrometer", "Cool must to 65-75°F"];
+  if (hasFruit && fruitTiming === "primary") brewDayTasks.push("Add fruit in sanitized mesh bag to primary fermenter");
+  if (hasSpice && spiceTiming === "primary") brewDayTasks.push("Add spices to primary fermenter (whole spices in mesh bag for easy removal)");
+  brewDayTasks.push("Pitch yeast", "Seal fermenter with airlock");
+
+  schedule.push({ day: 0, label: "Brew Day", tasks: brewDayTasks, phase: "prep" });
   schedule.push({ day: 1, label: "Day 1 — First Nutrient Addition", tasks: ["Degas must by swirling/stirring vigorously", "Add first nutrient dose (Fermaid-O recommended)", "Check for signs of fermentation (bubbles, foam)"], phase: "primary" });
   schedule.push({ day: 2, label: "Day 2 — Degassing", tasks: ["Degas must by stirring", "Check airlock activity"], phase: "primary" });
   schedule.push({ day: 3, label: "Day 3 — Second Nutrient Addition", tasks: ["Degas", "Add second nutrient dose"], phase: "primary" });
   schedule.push({ day: 5, label: "Day 5 — Third Nutrient Addition", tasks: ["Degas", "Add third nutrient dose"], phase: "primary" });
   schedule.push({ day: 7, label: "Day 7 — Final Nutrient (1/3 Sugar Break)", tasks: ["Take gravity reading", "If gravity has dropped ~1/3 from OG, add final nutrient dose", "This is the last nutrient addition — do NOT add more after this", "Continue degassing daily"], phase: "primary" });
-  schedule.push({ day: 14, label: "Day 14 — Gravity Check", tasks: ["Take gravity reading", "Fermentation should be slowing", "Stop degassing — minimize oxygen exposure from now on"], phase: "primary" });
+  schedule.push({ day: 14, label: "Day 14 — Gravity Check", tasks: ["Take gravity reading", "Fermentation should be slowing", "Stop degassing — minimize oxygen exposure from now on", ...(hasFruit && fruitTiming === "primary" ? ["Consider removing fruit if flavor is where you want it"] : [])], phase: "primary" });
 
   const primaryEnd = isSession ? 14 : isStrong ? 28 : 21;
   if (primaryEnd > 14) {
-    schedule.push({ day: primaryEnd, label: `Day ${primaryEnd} — End of Primary`, tasks: ["Take gravity reading (should be near or at target FG)", "If gravity is stable for 2–3 days, ready to rack", "Prepare secondary vessel — sanitize carboy"], phase: "primary" });
+    const peTasks = ["Take gravity reading (should be near or at target FG)", "If gravity is stable for 2–3 days, ready to rack", "Prepare secondary vessel — sanitize carboy"];
+    if (hasFruit && fruitTiming === "primary") peTasks.push("Remove fruit bag before racking if not already done");
+    if (hasSpice && spiceTiming === "primary") peTasks.push("Taste and consider removing spices — they've had weeks to extract");
+    schedule.push({ day: primaryEnd, label: `Day ${primaryEnd} — End of Primary`, tasks: peTasks, phase: "primary" });
   }
 
   const rackDay = primaryEnd + 2;
-  schedule.push({ day: rackDay, label: `Day ${rackDay} — Rack to Secondary`, tasks: ["Rack mead off lees into clean, sanitized carboy", "Minimize splashing to avoid oxidation", "Top up airlock", "If adding fruit, add it now in a sanitized mesh bag", sweetness !== "dry" ? "If back-sweetening: stabilize with potassium sorbate + campden tablet first" : "For dry mead: no stabilization needed"].filter(Boolean), phase: "secondary" });
+  const rackTasks = ["Rack mead off lees into clean, sanitized carboy", "Minimize splashing to avoid oxidation", "Top up airlock"];
+  if (hasFruit && fruitTiming === "secondary") rackTasks.push("Add fruit now in a sanitized mesh bag (freeze first to break cell walls)");
+  if (hasSpice && spiceTiming === "secondary") rackTasks.push("Add spices now — taste every few days and remove when flavor is right");
+  if (sweetness !== "dry") rackTasks.push("If back-sweetening: stabilize with potassium sorbate + campden tablet first");
+  schedule.push({ day: rackDay, label: `Day ${rackDay} — Rack to Secondary`, tasks: rackTasks, phase: "secondary" });
 
   const bulkAgingStart = rackDay + 14;
   if (bulkAgingStart < totalDays) {
-    schedule.push({ day: bulkAgingStart, label: `Day ${bulkAgingStart} — Check Clarity`, tasks: ["Check if mead is clearing", "If hazy, consider fining agent (bentonite or gelatin)", "Take gravity reading to confirm fermentation is complete", "Taste test — note any off-flavors that may age out"], phase: "secondary" });
+    const baTasks = ["Check if mead is clearing", "If hazy, consider fining agent (bentonite or gelatin)", "Take gravity reading to confirm fermentation is complete", "Taste test — note any off-flavors that may age out"];
+    if (hasFruit && fruitTiming === "secondary") baTasks.push("Check fruit flavor — remove fruit bag if strength is good (typically 2–4 weeks)");
+    if (hasSpice && spiceTiming === "secondary") baTasks.push("Check spice intensity — remove if flavor is where you want it");
+    schedule.push({ day: bulkAgingStart, label: `Day ${bulkAgingStart} — Check Clarity`, tasks: baTasks, phase: "secondary" });
   }
 
   const preBotDay = Math.max(totalDays - 7, bulkAgingStart + 7);
@@ -891,11 +906,11 @@ function MeadBrewingApp() {
   // ─── Recipe Builder ────────────────────────────────────────────────────
 
   function initRecipeBuilder() {
-    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Wildflower", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "90", batchName: "", liquid: "water", yeastId: "" };
+    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Wildflower", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "90", batchName: "", liquid: "water", yeastId: "", fruitTiming: "secondary", spiceTiming: "secondary", editingBatchId: null };
   }
 
   function quickStartRecipe() {
-    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Orange Blossom", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "60", batchName: "My First Mead", liquid: "water", yeastId: "" };
+    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Orange Blossom", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "60", batchName: "My First Mead", liquid: "water", yeastId: "", fruitTiming: "secondary", spiceTiming: "secondary", editingBatchId: null };
   }
 
   const RecipeBuilderPage = () => {
@@ -907,28 +922,35 @@ function MeadBrewingApp() {
     const recommendedYeast = recommendYeast(abvTarget, rb.sweetness, rb.fruits, rb.spices, rb.extras, rb.liquid);
     const selectedYeast = rb.yeastId ? YEAST_DB.find(y => y.id === rb.yeastId) || recommendedYeast : recommendedYeast;
     const yeast = selectedYeast;
-    const schedule = generateSchedule(rb.brewDays, abvTarget, rb.sweetness);
+    const schedule = generateSchedule(rb.brewDays, abvTarget, rb.sweetness, rb.fruitTiming, rb.spiceTiming, rb.fruits.length > 0, rb.spices.length > 0);
     const warnings = getCompatibilityWarnings(rb);
     const hasErrors = warnings.some(w => w.level === "error");
 
     const saveBatch = () => {
+      const isEdit = rb.editingBatchId != null;
+      const existingBatch = isEdit ? batches.find(b => b.id === rb.editingBatchId) : null;
       const batch = {
-        id: generateId(),
+        id: isEdit ? rb.editingBatchId : generateId(),
         name: rb.batchName || `${meadType.name} — ${new Date().toLocaleDateString()}`,
         meadType, sweetness: rb.sweetness, abv: rb.abv, abvTarget,
         honeyType: rb.honeyType, batchSize: rb.batchSize,
         liquid: rb.liquid, liquidName: LIQUID_BASES.find(l => l.id === rb.liquid)?.name || "Water",
         fruits: [...rb.fruits], spices: [...rb.spices], extras: [...rb.extras],
+        fruitTiming: rb.fruitTiming || "secondary", spiceTiming: rb.spiceTiming || "secondary",
         honeyLbs: honey.lbs, og: honey.og, yeast,
         schedule, brewDays: rb.brewDays,
-        createdAt: new Date().toISOString(),
-        completedSteps: [],
-        notes: [],
+        createdAt: existingBatch?.createdAt || new Date().toISOString(),
+        completedSteps: existingBatch?.completedSteps || [],
+        notes: existingBatch?.notes || [],
       };
-      setBatches(prev => [batch, ...prev]);
+      if (isEdit) {
+        setBatches(prev => prev.map(b => b.id === rb.editingBatchId ? batch : b));
+      } else {
+        setBatches(prev => [batch, ...prev]);
+      }
       setViewingBatch(batch);
       setTab("batchDetail");
-      showToast("Batch saved! Happy brewing 🍯");
+      showToast(isEdit ? "Recipe updated! 🍯" : "Batch saved! Happy brewing 🍯");
     };
 
     if (rb.step === 1) return (
@@ -1015,6 +1037,27 @@ function MeadBrewingApp() {
               <span key={f} onClick={() => update("fruits", rb.fruits.includes(f) ? rb.fruits.filter(x => x !== f) : [...rb.fruits, f])} style={styles.chip(rb.fruits.includes(f))}>{f}</span>
             ))}
           </div>
+          {rb.fruits.length > 0 && (
+            <div style={{ marginTop: 12, padding: "12px 14px", background: COLORS.surface, borderRadius: 8, border: `1px solid ${COLORS.border}` }}>
+              <label style={{ ...styles.label, marginBottom: 8 }}>When to add fruit?</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[
+                  { id: "primary", label: "🧪 Primary", desc: "Add with must on brew day" },
+                  { id: "secondary", label: "🔬 Secondary", desc: "Add after racking (recommended)" },
+                ].map(t => (
+                  <div key={t.id} onClick={() => update("fruitTiming", t.id)} style={{ ...styles.chip(rb.fruitTiming === t.id), flex: "1 1 auto", textAlign: "center", padding: "10px 14px" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
+                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{t.desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 13, color: COLORS.textMuted, lineHeight: 1.7, fontStyle: "italic" }}>
+                {rb.fruitTiming === "primary"
+                  ? "⚡ Adding fruit in primary gives more fermented, wine-like fruit character. The yeast will consume fruit sugars, producing a drier result with deeper but less \"fresh\" fruit flavor. Some volatile aromatics may be lost to CO₂ off-gassing. Works well for fruits you want deeply integrated."
+                  : "✨ Adding fruit in secondary (after primary fermentation) preserves brighter, fresher fruit character and aroma. This is the most common approach for melomels. Freeze fruit first to break cell walls, and use a sanitized mesh bag for easy removal."}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={styles.card}>
@@ -1024,6 +1067,27 @@ function MeadBrewingApp() {
               <span key={s} onClick={() => update("spices", rb.spices.includes(s) ? rb.spices.filter(x => x !== s) : [...rb.spices, s])} style={styles.chip(rb.spices.includes(s))}>{s}</span>
             ))}
           </div>
+          {rb.spices.length > 0 && (
+            <div style={{ marginTop: 12, padding: "12px 14px", background: COLORS.surface, borderRadius: 8, border: `1px solid ${COLORS.border}` }}>
+              <label style={{ ...styles.label, marginBottom: 8 }}>When to add spices?</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[
+                  { id: "primary", label: "🧪 Primary", desc: "Add with must on brew day" },
+                  { id: "secondary", label: "🔬 Secondary", desc: "Add after racking (recommended)" },
+                ].map(t => (
+                  <div key={t.id} onClick={() => update("spiceTiming", t.id)} style={{ ...styles.chip(rb.spiceTiming === t.id), flex: "1 1 auto", textAlign: "center", padding: "10px 14px" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
+                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{t.desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 13, color: COLORS.textMuted, lineHeight: 1.7, fontStyle: "italic" }}>
+                {rb.spiceTiming === "primary"
+                  ? "⚡ Adding spices in primary extracts bold, deep flavors as they steep in the fermenting must for weeks. Good for robust spices like cinnamon sticks or ginger root that you want thoroughly integrated. Risk: harder to control intensity — you can't easily remove them mid-fermentation."
+                  : "✨ Adding spices in secondary gives you much more control. You can taste daily and remove them when the flavor is right. This preserves more delicate aromatic qualities and prevents over-extraction. Highly recommended for potent spices like clove, star anise, and vanilla."}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={styles.card}>
@@ -1099,10 +1163,26 @@ function MeadBrewingApp() {
         {(rb.fruits.length > 0 || rb.spices.length > 0) && (
           <div style={styles.card}>
             <h3 style={{ ...styles.h3, marginTop: 0 }}>🧪 Additions</h3>
-            {rb.fruits.length > 0 && <p style={{ color: COLORS.text, marginBottom: 6 }}><strong>Fruits:</strong> {rb.fruits.join(", ")}</p>}
-            {rb.spices.length > 0 && <p style={{ color: COLORS.text, margin: 0 }}><strong>Spices:</strong> {rb.spices.join(", ")}</p>}
+            {rb.fruits.length > 0 && (
+              <div style={{ marginBottom: rb.spices.length > 0 ? 10 : 0 }}>
+                <p style={{ color: COLORS.text, marginBottom: 4 }}>
+                  <strong>Fruits:</strong> {rb.fruits.join(", ")}
+                  <span style={{ ...styles.badge(rb.fruitTiming === "primary" ? "gold" : "green"), marginLeft: 8, fontSize: 9 }}>
+                    {rb.fruitTiming === "primary" ? "Adding in Primary" : "Adding in Secondary"}
+                  </span>
+                </p>
+              </div>
+            )}
+            {rb.spices.length > 0 && (
+              <p style={{ color: COLORS.text, margin: 0 }}>
+                <strong>Spices:</strong> {rb.spices.join(", ")}
+                <span style={{ ...styles.badge(rb.spiceTiming === "primary" ? "gold" : "green"), marginLeft: 8, fontSize: 9 }}>
+                  {rb.spiceTiming === "primary" ? "Adding in Primary" : "Adding in Secondary"}
+                </span>
+              </p>
+            )}
             <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8, fontStyle: "italic" }}>
-              Fruit: use 2–4 lbs per gallon in secondary. Spices: start small — you can always add more!
+              Fruit: use 2–4 lbs per gallon. Spices: start small — you can always add more!
             </p>
           </div>
         )}
@@ -1186,7 +1266,7 @@ function MeadBrewingApp() {
 
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, gap: 12, flexWrap: "wrap" }}>
           <button style={styles.btnSecondary} onClick={() => update("step", 2)}>← Back</button>
-          <button style={{ ...styles.btnPrimary, opacity: hasErrors ? 0.4 : 1, cursor: hasErrors ? "not-allowed" : "pointer" }} onClick={() => !hasErrors && saveBatch()}>✓ Start This Batch</button>
+          <button style={{ ...styles.btnPrimary, opacity: hasErrors ? 0.4 : 1, cursor: hasErrors ? "not-allowed" : "pointer" }} onClick={() => !hasErrors && saveBatch()}>{rb.editingBatchId ? "✓ Update Recipe" : "✓ Start This Batch"}</button>
         </div>
       </div>
     );
@@ -1275,6 +1355,18 @@ function MeadBrewingApp() {
           <span style={{ fontSize: 48 }}>{batch.meadType?.icon}</span>
           <h1 style={{ ...styles.h1, marginTop: 8 }}>{batch.name}</h1>
           <p style={{ color: COLORS.textMuted }}>{batch.meadType?.name} · Day {daysOld}</p>
+          <button style={{ ...styles.btnSecondary, marginTop: 10, fontSize: 13 }} onClick={() => {
+            setRecipeBuilder({
+              step: 1,
+              sweetness: batch.sweetness, abv: batch.abv, honeyType: batch.honeyType,
+              batchSize: batch.batchSize, fruits: [...(batch.fruits || [])], spices: [...(batch.spices || [])],
+              extras: [...(batch.extras || [])], brewDays: batch.brewDays || "90",
+              batchName: batch.name, liquid: batch.liquid || "water",
+              yeastId: batch.yeast?.id || "", fruitTiming: batch.fruitTiming || "secondary",
+              spiceTiming: batch.spiceTiming || "secondary", editingBatchId: batch.id,
+            });
+            setTab("recipe");
+          }}>✏️ Edit Recipe</button>
         </div>
 
         <div style={{ ...styles.card, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, textAlign: "center" }}>
@@ -1294,6 +1386,40 @@ function MeadBrewingApp() {
           <h3 style={{ ...styles.h3, marginTop: 0 }}>Yeast: {batch.yeast?.name}</h3>
           <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>{batch.yeast?.notes}</p>
         </div>
+
+        {(batch.fruits?.length > 0 || batch.spices?.length > 0) && (
+          <div style={styles.card}>
+            <h3 style={{ ...styles.h3, marginTop: 0 }}>🧪 Additions & Timing</h3>
+            {batch.fruits?.length > 0 && (
+              <div style={{ marginBottom: batch.spices?.length > 0 ? 12 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 700, color: COLORS.text }}>Fruits:</span>
+                  <span style={styles.badge(batch.fruitTiming === "primary" ? "gold" : "green")}>
+                    {batch.fruitTiming === "primary" ? "In Primary" : "In Secondary"}
+                  </span>
+                </div>
+                <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>{batch.fruits.join(", ")}</p>
+              </div>
+            )}
+            {batch.spices?.length > 0 && (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 700, color: COLORS.text }}>Spices:</span>
+                  <span style={styles.badge(batch.spiceTiming === "primary" ? "gold" : "green")}>
+                    {batch.spiceTiming === "primary" ? "In Primary" : "In Secondary"}
+                  </span>
+                </div>
+                <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>{batch.spices.join(", ")}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {batch.liquidName && batch.liquidName !== "Spring Water" && (
+          <div style={styles.card}>
+            <h3 style={{ ...styles.h3, marginTop: 0 }}>💧 Liquid Base: {batch.liquidName}</h3>
+          </div>
+        )}
 
         <h2 style={styles.h2}>📅 Schedule</h2>
         <div style={styles.timeline}>
