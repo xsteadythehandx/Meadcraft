@@ -104,6 +104,48 @@ const SPICE_ADDITIONS = [
   "Saffron", "Lemongrass", "Mint", "Basil", "Bay Leaf",
 ];
 
+const LIQUID_BASES = [
+  { id: "water", name: "Spring Water", desc: "Classic choice. Lets honey shine.", icon: "💧", notes: "Use non-chlorinated spring or filtered water. Never tap water with chlorine." },
+  { id: "apple-cider", name: "Apple Cider", desc: "Makes a Cyser. Adds body & apple flavor.", icon: "🍎", notes: "Use fresh-pressed or preservative-free cider. Pasteurized is fine. Adds fermentable sugar — may increase ABV slightly." },
+  { id: "apple-juice", name: "Apple Juice", desc: "Lighter cyser. Milder than cider.", icon: "🧃", notes: "Make sure it has NO preservatives (potassium sorbate will prevent fermentation). Organic is safest." },
+  { id: "grape-juice", name: "Grape Juice", desc: "Makes a Pyment. Wine-like character.", icon: "🍇", notes: "Use 100% juice with no preservatives. Red grape juice adds tannin and color. White is more delicate." },
+  { id: "cherry-juice", name: "Cherry Juice", desc: "Rich, tart base. Beautiful color.", icon: "🍒", notes: "Tart cherry juice works best. Very flavorful — can use 50/50 with water if you want subtler fruit." },
+  { id: "cranberry-juice", name: "Cranberry Juice", desc: "Tart and vibrant. Bold pink color.", icon: "🫐", notes: "Very tart! Best with semi-sweet or sweet recipes. Use 100% juice, not cocktail." },
+  { id: "pomegranate-juice", name: "Pomegranate Juice", desc: "Deep, fruity, tannic.", icon: "🫒", notes: "Adds beautiful color and natural tannins. POM Wonderful works but check for preservatives." },
+  { id: "tea", name: "Brewed Tea", desc: "Adds tannin and complexity.", icon: "🫖", notes: "Black tea adds tannin structure. Green tea is more delicate. Brew strong, cool completely before using." },
+  { id: "coffee", name: "Cold Brew Coffee", desc: "Bold, roasty base.", icon: "☕", notes: "Use cold brew concentrate diluted to taste. Hot-brewed coffee can add bitterness. Start with 25-50% coffee, rest water." },
+  { id: "coconut-water", name: "Coconut Water", desc: "Tropical, mineral-rich.", icon: "🥥", notes: "Adds potassium and a subtle tropical note. Use plain, not flavored." },
+  { id: "custom", name: "Custom / Other", desc: "Using something not listed here.", icon: "🧪", notes: "Just make sure your liquid has no preservatives (sorbate, sulfites) that would prevent fermentation." },
+];
+
+const BEGINNER_TIPS = [
+  { icon: "🧼", title: "Sanitize Everything", tip: "If it touches your mead, it needs to be sanitized. Star San is your best friend — it's no-rinse, cheap, and a little goes a long way. This is the #1 cause of failed batches." },
+  { icon: "🌡️", title: "Temperature Matters", tip: "Keep your fermenting mead between 60–72°F. Too warm = fusel alcohols (harsh, hangover-inducing). Too cold = stalled fermentation. A closet usually works great." },
+  { icon: "🍯", title: "Quality Honey = Quality Mead", tip: "Your mead can only be as good as your honey. Raw, local, unprocessed honey will give you the best flavor. Avoid ultra-filtered supermarket honey if you can." },
+  { icon: "⏳", title: "Patience is an Ingredient", tip: "Young mead often tastes rough, hot, or weird. Give it time. Most meads need at least 2–3 months to start tasting good, and many get dramatically better at 6–12 months." },
+  { icon: "🧪", title: "Feed Your Yeast", tip: "Honey is nutrient-poor. Without proper yeast nutrients (Fermaid-O or Fermaid-K), your yeast will struggle and produce off-flavors. Staggered nutrient additions are key." },
+  { icon: "📏", title: "Take Gravity Readings", tip: "A hydrometer costs $8 and tells you exactly where your fermentation is. Take a reading before pitching (OG) and periodically during — it's how you know when you're done." },
+  { icon: "🫧", title: "Degas During Primary", tip: "Stir or swirl your mead vigorously during the first week to release CO₂. Dissolved CO₂ stresses yeast and slows fermentation. Stop degassing after the 1/3 sugar break." },
+  { icon: "🚫", title: "Don't Boil Your Honey", tip: "Old recipes say to boil honey. Don't! Boiling drives off delicate aromas and flavors. Just warm your water to dissolve the honey, or even mix it cold — the yeast doesn't care." },
+  { icon: "🍶", title: "Minimize Oxygen After Primary", tip: "During primary fermentation, oxygen is fine (even helpful). After that, oxygen is your enemy — it causes stale, cardboard-like flavors. Rack gently, keep airlocks full." },
+  { icon: "🧊", title: "Cold Crashing Helps Clarity", tip: "Before bottling, if you can chill your mead to near-freezing (33–38°F) for 24–48 hours, yeast and haze particles will drop out. You'll get beautiful clear mead." },
+  { icon: "📝", title: "Keep Notes on Everything", tip: "Write down your recipe, OG, dates, temperatures, when you added things, and how it tastes. Future you will thank present you when you want to recreate (or avoid) a batch." },
+  { icon: "🍎", title: "Add Fruit in Secondary", tip: "Adding fruit after primary fermentation preserves more fresh fruit character. Freeze fruit first to break cell walls for better extraction, and use a sanitized mesh bag for easy removal." },
+  { icon: "🌿", title: "Spices: Less is More", tip: "You can always add more spice, but you can't take it out. Start with half of what you think you need, taste after a few days, and add more if desired. Especially with clove and cinnamon." },
+  { icon: "🔬", title: "Stable Gravity = Done Fermenting", tip: "Take gravity readings 3 days apart. If they're the same, fermentation is complete. Don't just go by airlock activity — airlocks can bubble from temperature changes." },
+  { icon: "🧴", title: "Stabilize Before Back-Sweetening", tip: "If you add honey after fermentation without stabilizing (potassium sorbate + campden tablet), the yeast will just eat the new sugar. Stabilize first, wait 24hrs, then sweeten." },
+  { icon: "🫙", title: "Headspace is the Enemy", tip: "When racking to secondary, minimize the air gap above your mead. Use appropriately sized vessels, or top up with similar liquid. Excess headspace = oxidation risk." },
+  { icon: "🍷", title: "Glass Over Plastic for Aging", tip: "Plastic buckets are fine for primary, but for secondary/aging, glass carboys are better — they're impermeable to oxygen and won't scratch (scratches harbor bacteria)." },
+  { icon: "💰", title: "Start Small, Start Simple", tip: "Your first mead should be a simple 1-gallon traditional or cyser. Don't go crazy with 12 ingredients on batch #1. Learn the basics, then get creative." },
+  { icon: "🔄", title: "Rack Off the Lees", tip: "Dead yeast (lees) on the bottom can cause off-flavors (autolysis) if left too long. Rack your mead to a clean vessel after primary, and again if more sediment builds up." },
+  { icon: "🫗", title: "Use an Auto-Siphon", tip: "Trying to pour mead between vessels = disaster. An auto-siphon with tubing makes racking easy, clean, and low-oxygen. It's a $12 investment you'll use every single time." },
+  { icon: "🧂", title: "Water Quality Matters", tip: "Chlorine and chloramine in tap water can create medicinal off-flavors. Use spring water, or treat tap water with a campden tablet to remove chlorine/chloramine." },
+  { icon: "📦", title: "Don't Fear the Fruit Flies", tip: "Fruit flies carry acetobacter (vinegar bacteria). Keep your airlock full and your equipment covered during transfers. A single fruit fly can ruin a batch." },
+  { icon: "🎯", title: "Aim for 12% on Your First Batch", tip: "Around 12% ABV is the sweet spot for beginners — it's strong enough to be interesting, but not so high that yeast stress becomes an issue. About 3.5 lbs honey per gallon." },
+  { icon: "⚡", title: "Stuck Fermentation? Don't Panic", tip: "If fermentation stalls: 1) Check temperature, 2) Add nutrients if before 1/3 break, 3) Gently stir, 4) As last resort, pitch a strong yeast like EC-1118. Most stalls are fixable." },
+  { icon: "🏷️", title: "Label Your Bottles", tip: "It's easy to forget what's in each bottle after a few months. Label with: name, date bottled, ABV, and any tasting notes. You'll build a library of your brewing journey." },
+];
+
 const DICTIONARY = [
   { term: "ABV", def: "Alcohol By Volume — the percentage of alcohol in your finished mead." },
   { term: "Acerglyn", def: "A mead made with maple syrup in addition to honey." },
@@ -155,199 +197,356 @@ const DICTIONARY = [
 // ─── Compatibility Engine ─────────────────────────────────────────────────────
 
 function getCompatibilityWarnings(rb) {
-  const warnings = []; // { level: "error"|"warn"|"info"|"ok", icon, title, detail }
-  const { sweetness, abv, honeyType, fruits, spices, extras, brewDays } = rb;
+  const w = []; // { level: "error"|"warn"|"info"|"ok", icon, title, detail }
+  const { sweetness, abv, honeyType, fruits, spices, extras, brewDays, liquid, yeastId } = rb;
   const abvTarget = ABV_RANGES.find(a => a.id === abv)?.target || 11;
   const honeyInfo = HONEY_TYPES.find(h => h.name === honeyType);
   const days = parseInt(brewDays) || 60;
+  const totalAdditions = fruits.length + spices.length + extras.length;
 
-  // ── Flavor Clashes ──────────────────────────────────────────────────
+  // Helper categories
+  const hasCitrusFruit = fruits.some(f => ["Lemon", "Lime", "Grapefruit", "Orange"].includes(f));
+  const hasTropicalFruit = fruits.some(f => ["Pineapple", "Mango", "Passionfruit", "Dragonfruit", "Coconut", "Banana"].includes(f));
+  const hasBerryFruit = fruits.some(f => ["Blueberry", "Raspberry", "Blackberry", "Strawberry", "Elderberry", "Cranberry"].includes(f));
+  const hasStoneFruit = fruits.some(f => ["Peach", "Apricot", "Plum", "Cherry"].includes(f));
+  const hasDarkFruit = fruits.some(f => ["Cherry", "Blackberry", "Elderberry", "Fig", "Plum", "Pomegranate"].includes(f));
+  const hasDelicateFruit = fruits.some(f => ["Strawberry", "Peach", "Apricot", "Dragonfruit"].includes(f));
+  const hasTartFruit = fruits.some(f => ["Cranberry", "Lemon", "Lime", "Grapefruit", "Pomegranate"].includes(f));
 
-  // Citrus + delicate florals fight
-  const hasCitrus = fruits.some(f => ["Lemon", "Lime", "Grapefruit", "Orange", "Pineapple"].includes(f));
-  const hasDelicateFloral = spices.some(s => ["Lavender", "Chamomile", "Rose Petals"].includes(s));
-  if (hasCitrus && hasDelicateFloral) {
-    warnings.push({ level: "warn", icon: "⚔️", title: "Flavor Clash: Citrus vs. Delicate Florals", detail: "Strong citrus fruits tend to overpower delicate floral notes like lavender and chamomile. The florals may get lost entirely. Consider picking one direction — bright citrus OR soft floral." });
+  const hasDelicateFloral = spices.some(s => ["Lavender", "Chamomile", "Rose Petals", "Hibiscus"].includes(s));
+  const hasWarmSpice = spices.some(s => ["Cinnamon", "Clove", "Nutmeg", "Allspice", "Star Anise", "Cardamom"].includes(s));
+  const hasSavoryHerb = spices.some(s => ["Rosemary", "Thyme", "Sage", "Bay Leaf", "Basil"].includes(s));
+  const hasBoldAdditive = spices.some(s => ["Coffee Beans", "Cocoa Nibs"].includes(s)) || extras.includes("caramelized");
+  const hasOak = spices.includes("Oak Chips");
+
+  const isJuiceBase = liquid && !["water", "custom"].includes(liquid);
+  const isTartBase = ["cranberry-juice", "cherry-juice", "pomegranate-juice"].includes(liquid);
+  const isFruityBase = ["apple-cider", "apple-juice", "grape-juice", "cherry-juice", "cranberry-juice", "pomegranate-juice"].includes(liquid);
+  const isBoldBase = ["coffee", "tea"].includes(liquid);
+
+  const selectedYeast = yeastId ? YEAST_DB.find(y => y.id === yeastId) : null;
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 1: LIQUID ↔ EVERYTHING
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // Liquid ↔ Fruit
+  if (liquid === "apple-cider" && hasTropicalFruit) {
+    w.push({ level: "warn", icon: "🍎", title: "Apple Cider + Tropical Fruits", detail: "Apple cider's earthy, tannic character clashes with bright tropicals. Use water for tropical melomels, or lean into apple with berries or stone fruits." });
+  }
+  if (liquid === "apple-cider" && fruits.includes("Orange")) {
+    w.push({ level: "info", icon: "🍎", title: "Apple Cider + Orange", detail: "Can work but apple and orange compete rather than complement. Consider using one or the other as the star." });
+  }
+  if (liquid === "cherry-juice" && fruits.includes("Cherry")) {
+    w.push({ level: "info", icon: "🍒", title: "Cherry Juice + Cherry Fruit = Double Cherry", detail: "You'll get a very intense cherry character. Great if that's the goal — just know it'll dominate everything else." });
+  }
+  if (liquid === "cranberry-juice" && fruits.includes("Cranberry")) {
+    w.push({ level: "info", icon: "🫐", title: "Cranberry Juice + Cranberry Fruit", detail: "Extremely tart. Make sure your sweetness level can balance this, or it may be undrinkably sour." });
+  }
+  if (liquid === "grape-juice" && fruits.length > 1) {
+    w.push({ level: "info", icon: "🍇", title: "Grape Juice Base + Multiple Fruits", detail: "Grape juice already has strong character. Additional fruits may get lost or create a muddy profile. 1 complementary fruit works better." });
+  }
+  if (liquid === "coconut-water" && hasSavoryHerb) {
+    w.push({ level: "warn", icon: "🥥", title: "Coconut Water + Savory Herbs", detail: "Coconut's mild tropical character clashes with rosemary, thyme, and sage. Pair coconut with vanilla, cinnamon, or tropical fruits instead." });
   }
 
-  // Banana + savory herbs is weird
-  if (fruits.includes("Banana") && spices.some(s => ["Rosemary", "Thyme", "Sage", "Bay Leaf", "Basil"].includes(s))) {
-    warnings.push({ level: "warn", icon: "🤔", title: "Unusual Pairing: Banana + Savory Herbs", detail: "Banana's tropical sweetness tends to clash with savory culinary herbs. This combination can taste confused. If you want tropical, try ginger or vanilla instead." });
+  // Liquid ↔ Spice
+  if (liquid === "coffee" && hasDelicateFloral) {
+    w.push({ level: "warn", icon: "☕", title: "Coffee Base + Delicate Florals", detail: "Coffee's bold roast character will completely overpower lavender, chamomile, rose, or hibiscus. Use water for floral metheglins." });
+  }
+  if (liquid === "coffee" && hasDelicateFruit) {
+    w.push({ level: "warn", icon: "☕", title: "Coffee Base + Delicate Fruits", detail: "Coffee will drown out strawberry, peach, apricot, and dragonfruit. Pair coffee base with dark fruits (cherry, blackberry) or chocolate/vanilla instead." });
+  }
+  if (liquid === "coffee" && spices.includes("Cocoa Nibs") && spices.includes("Vanilla Bean")) {
+    w.push({ level: "ok", icon: "☕", title: "Coffee + Cocoa + Vanilla = Mocha Mead", detail: "A classic dessert-style combo. Consider semi-sweet or sweet to round out any bitterness." });
+  }
+  if (liquid === "tea" && hasBoldAdditive) {
+    w.push({ level: "info", icon: "🫖", title: "Tea Base + Bold Additives", detail: "Tea's subtle tannin and flavor may get buried under coffee, cocoa, or caramelized honey. Tea works best with lighter additions — florals, citrus, or ginger." });
+  }
+  if (liquid === "tea" && spices.includes("Ginger")) {
+    w.push({ level: "ok", icon: "🫖", title: "Tea + Ginger = Classic Combo", detail: "Tea and ginger are natural partners. Add lemon fruit or honey with citrus notes for a honey-ginger-tea mead." });
   }
 
-  // Too many competing strong flavors
-  const strongFlavors = [];
-  if (fruits.includes("Pineapple")) strongFlavors.push("Pineapple");
-  if (fruits.includes("Mango")) strongFlavors.push("Mango");
-  if (fruits.includes("Passionfruit")) strongFlavors.push("Passionfruit");
-  if (fruits.includes("Grapefruit")) strongFlavors.push("Grapefruit");
-  if (fruits.includes("Cranberry")) strongFlavors.push("Cranberry");
-  if (fruits.includes("Pomegranate")) strongFlavors.push("Pomegranate");
-  if (spices.includes("Coffee Beans")) strongFlavors.push("Coffee");
-  if (spices.includes("Cocoa Nibs")) strongFlavors.push("Cocoa");
-  if (strongFlavors.length >= 3) {
-    warnings.push({ level: "warn", icon: "🎭", title: "Too Many Strong Flavors Competing", detail: `You've selected ${strongFlavors.join(", ")} — these are all bold, dominant flavors that will fight for attention. Consider featuring 1–2 stars and supporting them with subtler additions.` });
+  // Liquid ↔ Honey
+  if (liquid === "grape-juice" && honeyType === "Buckwheat") {
+    w.push({ level: "warn", icon: "🍇", title: "Grape Juice + Buckwheat = Very Heavy", detail: "Both add strong, tannic flavors. The result may be overwhelmingly bold. Use a lighter honey for pyments." });
+  }
+  if (liquid === "coffee" && honeyType === "Buckwheat") {
+    w.push({ level: "warn", icon: "☕", title: "Coffee + Buckwheat = Extremely Bold", detail: "Both are intensely flavored. This will be a very dark, heavy, aggressive mead. Dial back one or the other unless that's your goal." });
+  }
+  if (isFruityBase && honeyInfo?.intensity === "heavy") {
+    w.push({ level: "info", icon: "🍯", title: `${honeyType} Honey + Juice Base`, detail: `${honeyType}'s bold flavor may compete with your ${LIQUID_BASES.find(l => l.id === liquid)?.name} base. Lighter honeys let juice character shine through.` });
   }
 
-  // Mint + many other things
+  // Liquid ↔ ABV/Sweetness
+  if (isTartBase && sweetness === "dry") {
+    w.push({ level: "warn", icon: "⚠️", title: `${LIQUID_BASES.find(l => l.id === liquid)?.name} + Dry = Very Tart`, detail: "Tart juice bases need some residual sweetness to balance. Dry finish will make this bracingly sour. Consider semi-sweet at minimum." });
+  }
+  if (liquid === "coffee" && abv === "session") {
+    w.push({ level: "info", icon: "☕", title: "Coffee + Session Strength", detail: "Coffee meads at low ABV can taste thin and bitter. Standard strength provides better body to carry the coffee." });
+  }
+  if (isFruityBase && abv === "strong") {
+    w.push({ level: "info", icon: "🧃", title: "Juice Base Adds Fermentable Sugar", detail: "Juice bases contain sugar that adds to your total fermentable load. Your actual ABV may come in higher than estimated. Consider reducing honey slightly or monitoring gravity closely." });
+  }
+
+  // Liquid ↔ Special Additions
+  if (liquid === "coffee" && extras.includes("caramelized")) {
+    w.push({ level: "info", icon: "🫕", title: "Coffee + Bochet", detail: "Both are bold and dark. This can work as a decadent dessert mead, but the flavors may blur together. Add vanilla to help differentiate them." });
+  }
+  if (isFruityBase && extras.includes("malt")) {
+    w.push({ level: "warn", icon: "🍺", title: "Juice Base + Malt (Braggot)", detail: "Braggots are already a honey-malt hybrid. Adding a juice base creates a three-way identity crisis. Pick juice OR malt, not both." });
+  }
+
+  // Liquid ↔ Timeline
+  if (isFruityBase && days < 60) {
+    w.push({ level: "info", icon: "🧃", title: "Juice Base Needs Settling Time", detail: "Juice bases can create more sediment and haze than water. Allow extra time for clearing — 60+ days recommended." });
+  }
+
+  // Preservative warning for all juice bases
+  if (isJuiceBase) {
+    w.push({ level: "info", icon: "🧃", title: "Non-Water Base: Check for Preservatives", detail: "Make sure your liquid has NO potassium sorbate or sodium benzoate — these will prevent fermentation entirely. Check the label!" });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 2: FRUIT ↔ SPICE/BOTANICAL
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (hasCitrusFruit && hasDelicateFloral) {
+    w.push({ level: "warn", icon: "⚔️", title: "Citrus Fruits vs. Delicate Florals", detail: "Strong citrus overpowers delicate florals like lavender and chamomile. Pick one direction — bright citrus OR soft floral." });
+  }
+  if (hasTropicalFruit && hasSavoryHerb) {
+    w.push({ level: "warn", icon: "🤔", title: "Tropical Fruits + Savory Herbs", detail: "Tropical sweetness (mango, banana, pineapple) clashes with savory herbs (rosemary, thyme, sage). These pull in opposite directions." });
+  }
+  if (hasDelicateFruit && hasBoldAdditive) {
+    w.push({ level: "warn", icon: "💪", title: "Bold Additives Overpower Delicate Fruits", detail: "Coffee, cocoa, and caramelized honey dominate subtle fruits like strawberry and peach. Pair bold additions with dark, robust fruits instead." });
+  }
+  if (hasDarkFruit && hasOak) {
+    w.push({ level: "ok", icon: "👌", title: "Dark Fruit + Oak", detail: "Oak adds tannin and complexity that complements dark fruits beautifully — wine-like elegance." });
+  }
+  if (hasDarkFruit && hasWarmSpice && !hasTropicalFruit) {
+    w.push({ level: "ok", icon: "👌", title: "Dark Fruit + Warm Spices", detail: "Dark berries/stone fruits with cinnamon, clove, or allspice is a proven winter mead profile." });
+  }
+  if (hasBerryFruit && hasDelicateFloral && !hasCitrusFruit && !hasBoldAdditive) {
+    w.push({ level: "ok", icon: "🌸", title: "Berries + Florals", detail: "Berry and floral combinations are classic mead pairings. Blueberry-lavender, raspberry-hibiscus, blackberry-rose — all great." });
+  }
   if (spices.includes("Mint") && fruits.length > 2) {
-    warnings.push({ level: "info", icon: "🌿", title: "Mint Dominates Fruit Blends", detail: "Mint is very assertive and can mask the flavors of multiple fruits. It pairs best with a single fruit (like berry or citrus) rather than complex fruit blends." });
+    w.push({ level: "info", icon: "🌿", title: "Mint Dominates Fruit Blends", detail: "Mint is assertive and masks multiple fruits. Best with a single fruit (berry or citrus) rather than complex blends." });
+  }
+  if (spices.includes("Coffee Beans") && hasDelicateFruit) {
+    w.push({ level: "warn", icon: "☕", title: "Coffee Overpowers Delicate Fruits", detail: "Coffee dominates light fruits. Pair with cherry, blackberry, or chocolate-adjacent flavors instead." });
+  }
+  if (fruits.includes("Coconut") && hasSavoryHerb) {
+    w.push({ level: "warn", icon: "🥥", title: "Coconut + Savory Herbs", detail: "Coconut's tropical sweetness clashes with earthy herbs. Pair with vanilla, cinnamon, or tropical spices." });
   }
 
-  // Coffee + light/delicate fruits
-  if (spices.includes("Coffee Beans") && fruits.some(f => ["Peach", "Apricot", "Strawberry", "Dragonfruit", "Lemon"].includes(f))) {
-    warnings.push({ level: "warn", icon: "☕", title: "Coffee Overpowers Delicate Fruits", detail: "Coffee's bold roasted flavor will completely dominate light fruits like peach, apricot, and strawberry. Coffee pairs better with cherry, blackberry, or chocolate-adjacent flavors." });
-  }
+  // Specific great pairings (fruit ↔ spice)
+  if (fruits.includes("Cherry") && spices.includes("Vanilla Bean")) w.push({ level: "ok", icon: "👌", title: "Cherry + Vanilla", detail: "Classic. Vanilla rounds out cherry's tartness beautifully." });
+  if (fruits.includes("Blueberry") && spices.includes("Lavender")) w.push({ level: "ok", icon: "👌", title: "Blueberry + Lavender", detail: "Natural match — lavender enhances blueberry's floral side." });
+  if (fruits.includes("Peach") && spices.includes("Ginger")) w.push({ level: "ok", icon: "👌", title: "Peach + Ginger", detail: "Ginger's warmth lifts peach's sweetness. A crowd-pleaser." });
+  if (fruits.includes("Raspberry") && spices.includes("Hibiscus")) w.push({ level: "ok", icon: "👌", title: "Raspberry + Hibiscus", detail: "Both tart and vibrant — hibiscus deepens raspberry's color and flavor." });
+  if (spices.includes("Cocoa Nibs") && spices.includes("Vanilla Bean")) w.push({ level: "ok", icon: "👌", title: "Cocoa + Vanilla", detail: "Chocolate bar in mead form. A dessert lover's dream." });
+  if (fruits.includes("Mango") && spices.includes("Black Pepper")) w.push({ level: "ok", icon: "👌", title: "Mango + Black Pepper", detail: "Surprising but well-known culinary pairing. Pepper brings out mango's depth." });
+  if (fruits.includes("Pineapple") && spices.includes("Ginger") && !hasBoldAdditive) w.push({ level: "ok", icon: "👌", title: "Pineapple + Ginger", detail: "Tropical heat — natural partners." });
+  if (fruits.includes("Blackberry") && spices.includes("Sage")) w.push({ level: "ok", icon: "👌", title: "Blackberry + Sage", detail: "An earthy, complex pairing. Sage complements blackberry's depth without overwhelming." });
+  if (fruits.includes("Fig") && spices.includes("Cinnamon")) w.push({ level: "ok", icon: "👌", title: "Fig + Cinnamon", detail: "Rich, autumnal combination. Works especially well with semi-sweet or sweet meads." });
+  if (fruits.includes("Cranberry") && spices.includes("Ginger")) w.push({ level: "ok", icon: "👌", title: "Cranberry + Ginger", detail: "Tart meets spicy — ginger's warmth balances cranberry's bite. Great winter mead." });
+  if (fruits.includes("Orange") && spices.includes("Cinnamon") && spices.includes("Clove")) w.push({ level: "ok", icon: "👌", title: "Orange + Cinnamon + Clove = Mulled Mead", detail: "A classic mulled wine flavor profile. Works beautifully." });
 
-  // Coconut works in limited combos
-  if (fruits.includes("Coconut") && spices.some(s => ["Rosemary", "Thyme", "Sage", "Juniper Berry", "Bay Leaf"].includes(s))) {
-    warnings.push({ level: "warn", icon: "🥥", title: "Coconut + Savory Herbs: Odd Combo", detail: "Coconut's tropical sweetness clashes with earthy, savory herbs. Coconut works better with vanilla, cinnamon, or tropical spices." });
-  }
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 3: HONEY ↔ EVERYTHING
+  // ═══════════════════════════════════════════════════════════════════════
 
-  // Classic good pairings — positive feedback
-  if (fruits.includes("Cherry") && spices.includes("Vanilla Bean")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Cherry + Vanilla", detail: "A classic combination. Vanilla rounds out cherry's tartness beautifully." });
-  }
-  if (fruits.includes("Blueberry") && spices.includes("Lavender")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Blueberry + Lavender", detail: "A natural match — lavender enhances blueberry's floral side without overwhelming it." });
-  }
-  if (fruits.includes("Peach") && spices.includes("Ginger")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Peach + Ginger", detail: "Ginger's warmth lifts peach's sweetness. A crowd-pleaser." });
-  }
-  if (fruits.includes("Raspberry") && spices.includes("Hibiscus")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Raspberry + Hibiscus", detail: "Both tart and vibrant — hibiscus deepens raspberry's color and flavor." });
-  }
-  if ((fruits.includes("Cherry") || fruits.includes("Blackberry")) && spices.includes("Oak Chips")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Dark Fruit + Oak", detail: "Oak adds tannin and complexity that complements dark fruits beautifully, like a fine wine." });
-  }
-  if (spices.includes("Cocoa Nibs") && spices.includes("Vanilla Bean")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Cocoa + Vanilla", detail: "Think chocolate bar in mead form. A dessert lover's dream." });
-  }
-  if (fruits.includes("Mango") && spices.includes("Black Pepper")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Mango + Black Pepper", detail: "A surprising but well-known culinary pairing. The pepper's heat brings out mango's depth." });
-  }
-  if (fruits.includes("Apple") && spices.includes("Cinnamon")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Classic Pairing: Apple + Cinnamon", detail: "A timeless combination. Hard to go wrong here." });
-  }
-  if (fruits.includes("Pineapple") && spices.includes("Ginger") && !spices.includes("Coffee Beans")) {
-    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Pineapple + Ginger", detail: "Tropical heat — ginger and pineapple are natural partners." });
-  }
-
-  // ── Honey Compatibility ─────────────────────────────────────────────
-
-  if (honeyInfo?.intensity === "heavy" && fruits.length > 0) {
+  if (honeyInfo?.intensity === "heavy" && hasDelicateFruit) {
     const delicate = fruits.filter(f => ["Strawberry", "Peach", "Apricot", "Dragonfruit", "Coconut"].includes(f));
-    if (delicate.length > 0) {
-      warnings.push({ level: "warn", icon: "🍯", title: `${honeyType} Honey May Overpower ${delicate.join(", ")}`, detail: `${honeyType} has a very strong, bold flavor that can drown out delicate fruits. Consider Clover or Orange Blossom honey to let your fruits shine, or embrace the honey-forward character.` });
+    if (delicate.length) w.push({ level: "warn", icon: "🍯", title: `${honeyType} May Overpower ${delicate.join(", ")}`, detail: `${honeyType} has a very bold flavor. Use Clover or Orange Blossom to let delicate fruits shine.` });
+  }
+  if (honeyInfo?.intensity === "heavy" && hasDelicateFloral) {
+    w.push({ level: "warn", icon: "🍯", title: `${honeyType} Overwhelms Delicate Florals`, detail: `${honeyType}'s intense flavor will mask lavender, chamomile, rose, or hibiscus. Use a lighter honey for floral metheglins.` });
+  }
+  if (honeyType === "Meadowfoam" && spices.includes("Vanilla Bean")) {
+    w.push({ level: "info", icon: "🍯", title: "Double Vanilla — Intentional?", detail: "Meadowfoam already has vanilla/marshmallow character. Adding vanilla bean doubles down — great if you want a vanilla bomb." });
+  }
+  if (honeyType === "Orange Blossom" && (fruits.includes("Orange") || hasCitrusFruit)) {
+    w.push({ level: "info", icon: "🍊", title: "Citrus Honey + Citrus Fruit", detail: "Orange Blossom honey already has citrus notes. Adding citrus fruit goes all-in on that character — works great if intentional." });
+  }
+  if (honeyType === "Mesquite" && hasTropicalFruit) {
+    w.push({ level: "warn", icon: "🍯", title: "Mesquite + Tropical Fruits", detail: "Mesquite's earthy, smoky character fights with bright tropical flavors. This pairing rarely works well." });
+  }
+  if (honeyType === "Buckwheat" && extras.includes("caramelized")) {
+    w.push({ level: "warn", icon: "🍯", title: "Buckwheat + Bochet = Extremely Dark", detail: "Buckwheat is already bold and molasses-like. Caramelizing it pushes it to extreme intensity. Use a lighter honey for bochets unless you want something very aggressive." });
+  }
+  if (honeyInfo?.intensity === "light" && hasBoldAdditive) {
+    w.push({ level: "info", icon: "🍯", title: `${honeyType} May Get Lost`, detail: `${honeyType}'s mild flavor may be completely hidden by coffee, cocoa, or caramelized honey. Consider Wildflower or Buckwheat for bold additions.` });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 4: SPECIAL ADDITIONS ↔ EVERYTHING
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (extras.includes("caramelized") && hasDelicateFloral) {
+    w.push({ level: "warn", icon: "🫕", title: "Bochet Overpowers Florals", detail: "Caramelized honey's intense toffee/burnt sugar dominates anything subtle. Pair with bold flavors or let bochet speak alone." });
+  }
+  if (extras.includes("caramelized") && hasDelicateFruit) {
+    w.push({ level: "warn", icon: "🫕", title: "Bochet Overpowers Delicate Fruits", detail: "Caramelized honey will drown out strawberry, peach, etc. Pair with dark fruits (cherry, fig, blackberry) for bochets." });
+  }
+  if (extras.includes("caramelized") && hasDarkFruit) {
+    w.push({ level: "ok", icon: "🫕", title: "Bochet + Dark Fruits", detail: "Dark fruits hold up to caramelized honey's intensity. Cherry bochet and fig bochet are particularly well-regarded." });
+  }
+  if (extras.includes("caramelized") && spices.includes("Vanilla Bean")) {
+    w.push({ level: "ok", icon: "🫕", title: "Bochet + Vanilla", detail: "Vanilla and toffee/caramel are natural partners. This is a dessert mead classic." });
+  }
+  if (extras.includes("malt") && fruits.length > 2) {
+    w.push({ level: "info", icon: "🍺", title: "Braggot + Many Fruits", detail: "Braggots blend mead and beer. Many fruits on top creates an identity crisis. Keep fruit to 1–2 max." });
+  }
+  if (extras.includes("malt") && hasDelicateFloral) {
+    w.push({ level: "warn", icon: "🍺", title: "Braggot + Florals", detail: "Malt's grain character clashes with delicate florals. Braggots work better with warm spices (cinnamon, ginger) or bold additions." });
+  }
+  if (extras.includes("malt") && spices.includes("Ginger")) {
+    w.push({ level: "ok", icon: "🍺", title: "Braggot + Ginger", detail: "Ginger beer meets mead — a well-established combination with great character." });
+  }
+  if (extras.includes("maple") && honeyType === "Buckwheat") {
+    w.push({ level: "warn", icon: "🍁", title: "Maple + Buckwheat = Very Heavy", detail: "Both bold and dark. Combined, it may be overwhelmingly heavy. Use a lighter honey to let maple speak." });
+  }
+  if (extras.includes("maple") && hasWarmSpice) {
+    w.push({ level: "ok", icon: "🍁", title: "Maple + Warm Spices", detail: "Maple with cinnamon, nutmeg, or allspice is a fantastic autumn mead profile. Like liquid pancakes." });
+  }
+  if (extras.includes("maple") && hasTropicalFruit) {
+    w.push({ level: "warn", icon: "🍁", title: "Maple + Tropical Fruits", detail: "Maple's earthy sweetness doesn't pair well with bright tropical flavors. Maple works better with berries, apples, or warm spices." });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 5: SPICE ↔ SPICE INTERACTIONS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (spices.includes("Lemongrass") && hasWarmSpice) {
+    w.push({ level: "warn", icon: "🌿", title: "Lemongrass + Warm Spices", detail: "Lemongrass pushes toward bright, Thai-inspired flavors while cinnamon/clove/nutmeg go warm and autumnal. These pull in opposite directions. Pick a lane." });
+  }
+  if (spices.includes("Coffee Beans") && spices.includes("Tea (Earl Grey)")) {
+    w.push({ level: "warn", icon: "☕", title: "Coffee + Tea: Competing Caffeine", detail: "Both are bold and tannic but in different directions. Coffee will dominate, making the tea pointless. Pick one." });
+  }
+  if (hasSavoryHerb && hasDelicateFloral) {
+    w.push({ level: "info", icon: "🌿", title: "Savory Herbs + Delicate Florals", detail: "Rosemary/thyme/sage can overshadow lavender/chamomile. If using both, go heavier on florals and lighter on herbs." });
+  }
+  if (spices.includes("Saffron") && (totalAdditions > 3)) {
+    w.push({ level: "info", icon: "🌾", title: "Saffron is Subtle and Expensive", detail: "Saffron's delicate flavor is easily buried. Keep the recipe simple — ideally saffron with just light honey and maybe one complementary addition." });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 6: ABV ↔ SWEETNESS ↔ INGREDIENTS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (abv === "session" && sweetness === "very-sweet") {
+    w.push({ level: "error", icon: "⚠️", title: "Incompatible: Low ABV + Very Sweet", detail: "Yeast would need to stop extremely early. Nearly impossible to control. Choose Semi-Sweet max for hydromel, or increase ABV." });
+  }
+  if (abv === "session" && sweetness === "sweet") {
+    w.push({ level: "warn", icon: "⚠️", title: "Tricky: Low ABV + Sweet", detail: "Requires careful yeast management and back-sweetening. Not beginner-friendly. Consider Semi-Sweet." });
+  }
+  if (abv === "strong" && sweetness === "dry") {
+    w.push({ level: "info", icon: "💪", title: "Dry + Strong = Hot Alcohol", detail: "High ABV dry meads taste 'hot' without sweetness to balance. Needs 6–12+ months aging." });
+  }
+  if (hasTartFruit && sweetness === "dry" && !isTartBase) {
+    w.push({ level: "info", icon: "🍋", title: "Tart Fruit + Dry Finish", detail: "Cranberry, citrus, and pomegranate are naturally tart. A dry finish amplifies that — consider semi-sweet for better balance." });
+  }
+  if (totalAdditions >= 6 && abv === "session") {
+    w.push({ level: "warn", icon: "📊", title: "Many Additions + Low ABV", detail: "Session meads have light body that may not support this many additions. Strong flavors need alcohol to carry them." });
+  }
+  if (abv === "strong" && hasTropicalFruit) {
+    w.push({ level: "info", icon: "🌴", title: "Tropical Fruits + High ABV", detail: "Delicate tropical fruit flavors can get masked by high alcohol. Standard ABV often showcases tropicals better. If going strong, add fruit generously in secondary." });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 7: TIMELINE ↔ EVERYTHING
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (abv === "strong" && days < 90) {
+    w.push({ level: "error", icon: "⏰", title: "Timeline Too Short for High ABV", detail: `${days} days isn't enough for 14–18% ABV. Fermentation alone takes 4–6 weeks, plus aging. Need 120+ days, ideally 180+.` });
+  }
+  if (abv === "standard" && days < 45) {
+    w.push({ level: "warn", icon: "⏰", title: "Very Tight Timeline", detail: `${days} days is cutting it close for standard mead. Consider 60+ days.` });
+  }
+  if (days > 300 && abv === "session") {
+    w.push({ level: "info", icon: "⏰", title: "Long Aging for Session Mead", detail: "Session meads are best fresh at 30–60 days. Extended aging may cause light flavors to fade." });
+  }
+  if (fruits.length > 0 && days < 45) {
+    w.push({ level: "warn", icon: "🍇", title: "Fruit Needs Time in Secondary", detail: "Fruit needs 2–4 weeks in secondary for proper extraction. Your timeline may not allow full fruit expression." });
+  }
+  if (spices.length > 0 && days < 35) {
+    w.push({ level: "warn", icon: "🌿", title: "Spices Need Infusion Time", detail: "Spices need at least 1–2 weeks to properly infuse. Very short timelines won't give you full spice character." });
+  }
+  if (extras.includes("caramelized") && days < 90) {
+    w.push({ level: "warn", icon: "🫕", title: "Bochets Need Aging", detail: "Caramelized honey produces intense flavors that need time to mellow and integrate. 90+ days minimum, 6 months ideal." });
+  }
+  if (hasOak && days < 60) {
+    w.push({ level: "warn", icon: "🪵", title: "Oak Needs Time", detail: "Oak chips need 4–8 weeks to impart proper flavor. Too little time = raw, tannic character. Too much = over-oaked." });
+  }
+  if (abv === "strong" && sweetness === "dry" && days < 180) {
+    w.push({ level: "warn", icon: "⏰", title: "Dry Strong Mead Needs Extended Aging", detail: "High ABV dry meads are harsh when young. They really need 6+ months to become enjoyable. Consider extending your timeline." });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 8: YEAST ↔ RECIPE (when user has chosen a yeast)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (selectedYeast) {
+    if (selectedYeast.tolerance < abvTarget) {
+      w.push({ level: "warn", icon: "🧫", title: `${selectedYeast.name} Tolerance (${selectedYeast.tolerance}%) < Target ABV (~${abvTarget}%)`, detail: "This yeast may stop fermenting before reaching your target, leaving residual sweetness. That may be fine if you want a sweeter mead, but it won't be fully dry." });
+    }
+    if (selectedYeast.id === "d47" && fruits.length > 0 && !hasDarkFruit) {
+      w.push({ level: "info", icon: "🧫", title: "D-47 Isn't Ideal for Fruit Meads", detail: "D-47 is great for traditionals and spiced meads but can produce harsh flavors with fruit. 71B metabolizes malic acid, making it better for melomels." });
+    }
+    if (selectedYeast.id === "ec1118" && (hasDelicateFruit || hasDelicateFloral)) {
+      w.push({ level: "warn", icon: "🧫", title: "EC-1118 Strips Delicate Flavors", detail: "EC-1118 ferments very aggressively and can strip out subtle fruit and floral character. Consider 71B or QA23 for delicate additions." });
+    }
+    if (selectedYeast.id === "us05" && abvTarget > 11) {
+      w.push({ level: "warn", icon: "🧫", title: "US-05 May Stall at High ABV", detail: "Safale US-05 is an ale yeast with 11% tolerance. For standard or strong meads, use a wine yeast like 71B, K1-V1116, or EC-1118." });
+    }
+    if (selectedYeast.id === "rc212" && !hasDarkFruit) {
+      w.push({ level: "info", icon: "🧫", title: "RC-212 Shines with Dark Fruits", detail: "RC-212 enhances red/dark fruit character. Without dark fruits in your recipe, other yeasts may serve you better." });
+    }
+    if (selectedYeast.id === "71b" && extras.includes("malt")) {
+      w.push({ level: "info", icon: "🧫", title: "71B Not Typical for Braggots", detail: "71B is a wine yeast optimized for fruit. For braggots, US-05 or a beer yeast may give more authentic character." });
     }
   }
 
-  if (honeyType === "Buckwheat" && hasDelicateFloral) {
-    warnings.push({ level: "warn", icon: "🍯", title: "Buckwheat Overwhelms Delicate Florals", detail: "Buckwheat's intense, molasses-like flavor will completely mask lavender, chamomile, or rose. Use a lighter honey for floral metheglins." });
-  }
-
-  if (honeyType === "Meadowfoam" && spices.includes("Vanilla Bean")) {
-    warnings.push({ level: "info", icon: "🍯", title: "Double Vanilla — Intentional?", detail: "Meadowfoam honey already has a natural vanilla/marshmallow character. Adding vanilla bean will double down on that note. Great if you want a vanilla bomb, but just know it may be one-dimensional." });
-  }
-
-  if (honeyType === "Orange Blossom" && fruits.includes("Orange")) {
-    warnings.push({ level: "info", icon: "🍊", title: "Orange on Orange", detail: "Orange Blossom honey already has citrus notes. Adding orange fruit will really lean into that flavor. Works great — just know you're going all-in on citrus character." });
-  }
-
-  // ── ABV + Sweetness Compatibility ───────────────────────────────────
-
-  if (abv === "session" && sweetness === "very-sweet") {
-    warnings.push({ level: "error", icon: "⚠️", title: "Incompatible: Low ABV + Very Sweet", detail: "To make a very sweet mead at session strength, the yeast would need to stop fermenting extremely early. This is very difficult to control and often results in a stuck fermentation or an unpredictable outcome. Choose Semi-Sweet at most for a hydromel, or increase ABV." });
-  }
-
-  if (abv === "session" && sweetness === "sweet") {
-    warnings.push({ level: "warn", icon: "⚠️", title: "Tricky Combo: Low ABV + Sweet", detail: "Achieving sweetness at low ABV requires careful yeast management and back-sweetening with stabilization. Doable, but not beginner-friendly. Consider Semi-Sweet for easier results." });
-  }
-
-  if (abv === "strong" && sweetness === "dry") {
-    warnings.push({ level: "info", icon: "💪", title: "Dry + Strong = Hot Alcohol", detail: "High ABV dry meads can taste very 'hot' (harsh alcohol burn) without sweetness to balance. This style needs significant aging time (6–12+ months) to smooth out. Make sure your brew timeline accounts for this." });
-  }
-
-  // ── Timeline Warnings ───────────────────────────────────────────────
-
-  if (abv === "strong" && days < 90) {
-    warnings.push({ level: "error", icon: "⏰", title: "Timeline Too Short for High ABV", detail: `Strong meads (14–18% ABV) need time — fermentation alone can take 4–6 weeks, and they really need 3–6+ months of aging to not taste like rocket fuel. ${days} days isn't enough. Recommend at least 120 days, ideally 180+.` });
-  }
-
-  if (abv === "standard" && days < 45) {
-    warnings.push({ level: "warn", icon: "⏰", title: "Very Tight Timeline", detail: `${days} days is cutting it close for a standard mead. Primary fermentation takes 2–3 weeks, leaving little time for clearing and aging. You might end up with a cloudy, rough mead. Consider 60+ days.` });
-  }
-
-  if (days > 300 && abv === "session") {
-    warnings.push({ level: "info", icon: "⏰", title: "Long Aging for a Session Mead", detail: "Session/hydromel meads are meant to be fresh and drinkable. 10+ months of aging may cause the light flavors to fade. These are best at 30–60 days." });
-  }
-
-  if (fruits.length > 0 && days < 45) {
-    warnings.push({ level: "warn", icon: "🍇", title: "Fruit Needs Time in Secondary", detail: "Fruit additions need at least 2–4 weeks in secondary to properly extract flavor and settle. With your current timeline, you may not get full fruit expression." });
-  }
-
-  // ── Ingredient Volume Warnings ──────────────────────────────────────
-
-  if (fruits.length > 4) {
-    warnings.push({ level: "warn", icon: "🎨", title: `${fruits.length} Fruits — Flavor Muddling Risk`, detail: "More than 4 fruits tends to create a muddy, indistinct flavor where nothing stands out. The best melomels usually feature 1–2 star fruits with maybe 1 supporting fruit. Consider simplifying." });
-  } else if (fruits.length === 3 || fruits.length === 4) {
-    warnings.push({ level: "info", icon: "🍹", title: `${fruits.length} Fruits Selected`, detail: "Multiple fruits can work well if they're in the same flavor family (all berries, all tropical, all stone fruit). Make sure yours complement each other." });
-  }
-
-  if (spices.length > 4) {
-    warnings.push({ level: "warn", icon: "🌶️", title: `${spices.length} Spices — Complexity Overload`, detail: "With this many spices, your mead risks tasting like a spice cabinet. Each spice needs room to express itself. Consider narrowing to 2–3 that tell a cohesive flavor story (like 'chai': cinnamon + cardamom + ginger)." });
-  }
-
-  // ── Specific Tricky Ingredients ─────────────────────────────────────
-
-  if (spices.includes("Saffron") && (fruits.length > 1 || spices.length > 2)) {
-    warnings.push({ level: "info", icon: "🌾", title: "Saffron is Subtle and Expensive", detail: "Saffron's delicate flavor is easily buried by other strong ingredients. For saffron to shine, keep the recipe simple — ideally just saffron with a light honey. You don't want to waste it." });
-  }
-
-  if (spices.includes("Star Anise") && !["sweet", "very-sweet"].includes(sweetness)) {
-    warnings.push({ level: "info", icon: "⭐", title: "Star Anise in Dry Mead", detail: "Star anise's licorice flavor can taste medicinal without some sweetness to balance it. Consider semi-sweet or sweet for better results with anise." });
-  }
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 9: SPECIFIC INGREDIENT WARNINGS (always show)
+  // ═══════════════════════════════════════════════════════════════════════
 
   if (spices.includes("Clove")) {
-    warnings.push({ level: "info", icon: "🫚", title: "Clove — Use Sparingly!", detail: "Clove is extremely potent. Even a small amount can dominate your entire batch. Start with 1–2 cloves per gallon max, and add in secondary so you can taste and remove them." });
+    w.push({ level: "info", icon: "🫚", title: "Clove — Use Sparingly!", detail: "Clove is extremely potent. 1–2 cloves per gallon max. Add in secondary so you can taste and remove." });
   }
-
+  if (spices.includes("Star Anise") && !["sweet", "very-sweet"].includes(sweetness)) {
+    w.push({ level: "info", icon: "⭐", title: "Star Anise in Dry Mead", detail: "Star anise's licorice flavor can taste medicinal without sweetness to balance. Consider semi-sweet or sweet." });
+  }
   if (fruits.includes("Banana")) {
-    warnings.push({ level: "info", icon: "🍌", title: "Banana — Processing Matters", detail: "Banana can add a nice tropical character but tends to create a lot of pectin haze. Use pectic enzyme to help with clarity. Overripe bananas work best for flavor extraction." });
+    w.push({ level: "info", icon: "🍌", title: "Banana — Processing Matters", detail: "Banana creates pectin haze. Use pectic enzyme. Overripe bananas work best for flavor." });
   }
 
-  if (fruits.includes("Cranberry") && sweetness === "dry") {
-    warnings.push({ level: "warn", icon: "🫐", title: "Dry Cranberry Mead = Very Tart", detail: "Cranberries are already very tart. Without residual sweetness to balance, this will be aggressively sour. Consider at least semi-sweet, or pair cranberry with a sweeter fruit." });
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 10: VOLUME WARNINGS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (fruits.length > 4) {
+    w.push({ level: "warn", icon: "🎨", title: `${fruits.length} Fruits — Muddling Risk`, detail: "More than 4 fruits creates a muddy, indistinct flavor. Feature 1–2 stars with maybe 1 supporting fruit." });
+  } else if (fruits.length >= 3) {
+    w.push({ level: "info", icon: "🍹", title: `${fruits.length} Fruits Selected`, detail: "Works best if they're in the same family (all berries, all tropical, all stone fruit)." });
+  }
+  if (spices.length > 4) {
+    w.push({ level: "warn", icon: "🌶️", title: `${spices.length} Spices — Overload`, detail: "Too many spices = spice cabinet. Narrow to 2–3 with a cohesive theme (e.g., chai: cinnamon + cardamom + ginger)." });
   }
 
-  if (spices.includes("Lemongrass") && spices.includes("Cinnamon")) {
-    warnings.push({ level: "warn", icon: "🌿", title: "Lemongrass + Cinnamon: Competing Directions", detail: "Lemongrass pushes toward bright, Thai-inspired flavors while cinnamon goes warm and autumnal. These pull the mead in opposite directions. Pick a lane." });
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 11: POSITIVE OVERALL ASSESSMENT
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (totalAdditions === 0 && honeyInfo?.intensity !== "heavy" && liquid === "water") {
+    w.push({ level: "ok", icon: "🍯", title: "Clean Traditional — Great Choice", detail: "Lets the honey shine. One of the best ways to learn the craft." });
+  }
+  if (totalAdditions === 0 && isFruityBase) {
+    w.push({ level: "ok", icon: "🧃", title: `${LIQUID_BASES.find(l => l.id === liquid)?.name} + Honey — Simple & Effective`, detail: "Juice-based meads with no extra additions can be fantastic. The juice and honey do all the work." });
   }
 
-  if (extras.includes("caramelized") && (hasDelicateFloral || fruits.some(f => ["Strawberry", "Peach", "Dragonfruit"].includes(f)))) {
-    warnings.push({ level: "warn", icon: "🫕", title: "Bochet Overpowers Delicate Additions", detail: "Caramelized honey has an intense toffee/burnt sugar flavor that will dominate anything subtle. Pair with bold flavors (dark fruits, coffee, chocolate) or let the bochet character speak for itself." });
-  }
-
-  if (extras.includes("malt") && fruits.length > 2) {
-    warnings.push({ level: "info", icon: "🍺", title: "Braggot + Lots of Fruit = Identity Crisis", detail: "Braggots already blend mead and beer styles. Adding many fruits on top creates a complex mix that can be hard to balance. Consider keeping the fruit simple (1–2 max) for a braggot." });
-  }
-
-  if (extras.includes("maple") && honeyType === "Buckwheat") {
-    warnings.push({ level: "warn", icon: "🍁", title: "Maple + Buckwheat = Very Heavy", detail: "Both maple syrup and buckwheat honey are bold and dark. Combined, they may produce an overwhelmingly heavy, molasses-like mead. Consider a lighter honey to let the maple speak." });
-  }
-
-  // ── Beginner-Friendly Nudges ────────────────────────────────────────
-
-  const totalAdditions = fruits.length + spices.length + extras.length;
-  if (totalAdditions === 0 && honeyInfo?.intensity !== "heavy") {
-    warnings.push({ level: "ok", icon: "🍯", title: "Clean Traditional — Great Choice", detail: "A traditional mead lets the honey shine. This is actually one of the best ways to learn the craft, since every flavor comes from the honey and fermentation itself." });
-  }
-
-  if (totalAdditions >= 6 && abv === "session") {
-    warnings.push({ level: "warn", icon: "📊", title: "Lots of Additions + Low ABV", detail: "Session meads have a lighter body that may not support this many additions. Strong flavors need alcohol to carry them. Consider reducing additions or increasing ABV." });
-  }
-
-  return warnings;
+  return w;
 }
 
 // ─── Utility Functions ────────────────────────────────────────────────────────
@@ -376,27 +575,63 @@ function classifyMead(fruits, spices, extras) {
   return MEAD_TYPES.traditional;
 }
 
-function recommendYeast(targetABV, sweetness, fruits) {
+function recommendYeast(targetABV, sweetness, fruits, spices, extras, liquid) {
   const hasFruit = fruits && fruits.length > 0;
+  const hasDarkFruit = fruits?.some(f => ["Cherry", "Blackberry", "Elderberry", "Fig", "Plum", "Pomegranate"].includes(f));
+  const hasMalt = extras?.includes("malt");
+  const hasDelicateFloral = spices?.some(s => ["Lavender", "Chamomile", "Rose Petals", "Hibiscus"].includes(s));
+  const isCoffeeBase = liquid === "coffee";
+  const isCiderBase = liquid === "apple-cider" || liquid === "apple-juice";
   const candidates = YEAST_DB.filter(y => y.tolerance >= targetABV * 0.85);
   if (candidates.length === 0) return YEAST_DB.find(y => y.id === "ec1118");
-  if (sweetness === "dry" && targetABV <= 14) {
-    const pick = candidates.find(y => y.id === "d47") || candidates.find(y => y.id === "qa23");
+  const find = (id) => candidates.find(y => y.id === id);
+
+  // Braggots: prefer ale yeast
+  if (hasMalt) {
+    const pick = find("us05");
     if (pick) return pick;
   }
+  // Dark fruit melomels: RC-212 is ideal
+  if (hasDarkFruit && !hasMalt) {
+    const pick = find("rc212") || find("71b");
+    if (pick) return pick;
+  }
+  // Fruit meads: 71B metabolizes malic acid, best for melomels
   if (hasFruit) {
-    const pick = candidates.find(y => y.id === "71b") || candidates.find(y => y.id === "qa23");
+    const pick = find("71b") || find("qa23");
     if (pick) return pick;
   }
+  // Cider base (cyser): 71B great for apple malic acid
+  if (isCiderBase) {
+    const pick = find("71b") || find("d47");
+    if (pick) return pick;
+  }
+  // Coffee base: needs a clean fermenter that won't add competing flavors
+  if (isCoffeeBase) {
+    const pick = find("k1v") || find("ec1118");
+    if (pick) return pick;
+  }
+  // Delicate florals: D-47 enhances floral character
+  if (hasDelicateFloral && !hasFruit) {
+    const pick = find("d47") || find("qa23");
+    if (pick) return pick;
+  }
+  // Dry traditionals: D-47 for floral/spicy character
+  if (sweetness === "dry" && targetABV <= 14) {
+    const pick = find("d47") || find("qa23");
+    if (pick) return pick;
+  }
+  // High ABV: need a strong fermenter
   if (targetABV > 14) {
-    const pick = candidates.find(y => y.id === "k1v") || candidates.find(y => y.id === "ec1118");
+    const pick = find("k1v") || find("ec1118");
     if (pick) return pick;
   }
+  // Session/hydromel
   if (targetABV <= 7) {
-    const pick = candidates.find(y => y.id === "us05") || candidates.find(y => y.id === "71b");
+    const pick = find("us05") || find("71b");
     if (pick) return pick;
   }
-  return candidates.find(y => y.id === "71b") || candidates[0];
+  return find("71b") || candidates[0];
 }
 
 function calcHoney(targetABV, sweetness, gallons) {
@@ -638,24 +873,29 @@ function MeadBrewingApp() {
         </div>
       )}
 
-      <div style={{ ...styles.card, marginTop: 28, borderColor: COLORS.goldDim + "40" }}>
-        <h3 style={{ ...styles.h3, margin: "0 0 10px" }}>💡 Tip for New Brewers</h3>
-        <p style={{ color: COLORS.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-          Your #1 priority is <strong style={{ color: COLORS.gold }}>sanitation</strong>. Everything that touches your mead must be sanitized with a no-rinse sanitizer like Star San. 
-          Beyond that, mead is forgiving — honey, water, yeast, and patience are all you really need. Use the <strong style={{ color: COLORS.gold }}>Quick Start</strong> option above for your first batch!
-        </p>
-      </div>
+      {(() => {
+        const tip = BEGINNER_TIPS[Math.floor(Math.random() * BEGINNER_TIPS.length)];
+        return (
+          <div style={{ ...styles.card, marginTop: 28, borderColor: COLORS.goldDim + "40" }}>
+            <h3 style={{ ...styles.h3, margin: "0 0 10px" }}>{tip.icon} {tip.title}</h3>
+            <p style={{ color: COLORS.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
+              {tip.tip}
+            </p>
+            <p style={{ color: COLORS.textDim, fontSize: 11, marginTop: 10, fontStyle: "italic" }}>💡 A new tip appears each time you visit the home page</p>
+          </div>
+        );
+      })()}
     </div>
   );
 
   // ─── Recipe Builder ────────────────────────────────────────────────────
 
   function initRecipeBuilder() {
-    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Wildflower", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "90", batchName: "" };
+    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Wildflower", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "90", batchName: "", liquid: "water", yeastId: "" };
   }
 
   function quickStartRecipe() {
-    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Orange Blossom", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "60", batchName: "My First Mead" };
+    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Orange Blossom", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "60", batchName: "My First Mead", liquid: "water", yeastId: "" };
   }
 
   const RecipeBuilderPage = () => {
@@ -664,10 +904,32 @@ function MeadBrewingApp() {
     const meadType = classifyMead(rb.fruits, rb.spices, rb.extras);
     const abvTarget = ABV_RANGES.find(a => a.id === rb.abv)?.target || 11;
     const honey = calcHoney(abvTarget, rb.sweetness, parseFloat(rb.batchSize) || 1);
-    const yeast = recommendYeast(abvTarget, rb.sweetness, rb.fruits);
+    const recommendedYeast = recommendYeast(abvTarget, rb.sweetness, rb.fruits, rb.spices, rb.extras, rb.liquid);
+    const selectedYeast = rb.yeastId ? YEAST_DB.find(y => y.id === rb.yeastId) || recommendedYeast : recommendedYeast;
+    const yeast = selectedYeast;
     const schedule = generateSchedule(rb.brewDays, abvTarget, rb.sweetness);
     const warnings = getCompatibilityWarnings(rb);
     const hasErrors = warnings.some(w => w.level === "error");
+
+    const saveBatch = () => {
+      const batch = {
+        id: generateId(),
+        name: rb.batchName || `${meadType.name} — ${new Date().toLocaleDateString()}`,
+        meadType, sweetness: rb.sweetness, abv: rb.abv, abvTarget,
+        honeyType: rb.honeyType, batchSize: rb.batchSize,
+        liquid: rb.liquid, liquidName: LIQUID_BASES.find(l => l.id === rb.liquid)?.name || "Water",
+        fruits: [...rb.fruits], spices: [...rb.spices], extras: [...rb.extras],
+        honeyLbs: honey.lbs, og: honey.og, yeast,
+        schedule, brewDays: rb.brewDays,
+        createdAt: new Date().toISOString(),
+        completedSteps: [],
+        notes: [],
+      };
+      setBatches(prev => [batch, ...prev]);
+      setViewingBatch(batch);
+      setTab("batchDetail");
+      showToast("Batch saved! Happy brewing 🍯");
+    };
 
     if (rb.step === 1) return (
       <div>
@@ -715,6 +977,26 @@ function MeadBrewingApp() {
     if (rb.step === 2) return (
       <div>
         <h1 style={styles.h1}>Ingredients</h1>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Liquid Base</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {LIQUID_BASES.map(lb => (
+              <div key={lb.id} onClick={() => update("liquid", lb.id)} style={{ ...styles.chip(rb.liquid === lb.id), padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>{lb.icon}</span> {lb.name}
+              </div>
+            ))}
+          </div>
+          {(() => {
+            const sel = LIQUID_BASES.find(l => l.id === rb.liquid);
+            return sel ? (
+              <div style={{ marginTop: 8 }}>
+                <p style={{ fontSize: 14, color: COLORS.goldLight, fontWeight: 600 }}>{sel.icon} {sel.name} — {sel.desc}</p>
+                <p style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4 }}>{sel.notes}</p>
+              </div>
+            ) : null;
+          })()}
+        </div>
 
         <div style={styles.card}>
           <label style={styles.label}>Honey Variety</label>
@@ -803,8 +1085,8 @@ function MeadBrewingApp() {
               ["Target ABV", `~${abvTarget}%`],
               ["Sweetness", SWEETNESS_LEVELS.find(s => s.id === rb.sweetness)?.name],
               ["Est. OG", honey.og],
-              ["Honey Needed", `${honey.lbs} lbs`],
-              ["Honey Type", rb.honeyType],
+              ["Honey", `${honey.lbs} lbs ${rb.honeyType}`],
+              ["Liquid Base", LIQUID_BASES.find(l => l.id === rb.liquid)?.name || "Water"],
             ].map(([k, v]) => (
               <div key={k}>
                 <div style={{ fontSize: 11, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 1 }}>{k}</div>
@@ -826,14 +1108,36 @@ function MeadBrewingApp() {
         )}
 
         <div style={{ ...styles.card, borderColor: COLORS.gold + "30" }}>
-          <h3 style={{ ...styles.h3, marginTop: 0 }}>🧫 Recommended Yeast</h3>
-          <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.goldLight }}>{yeast.name}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, fontSize: 14 }}>
-            <div><span style={{ color: COLORS.textMuted }}>Tolerance:</span> <span style={{ color: COLORS.gold }}>{yeast.tolerance}%</span></div>
-            <div><span style={{ color: COLORS.textMuted }}>Temp:</span> <span style={{ color: COLORS.gold }}>{yeast.tempRange}</span></div>
-            <div style={{ gridColumn: "1 / -1" }}><span style={{ color: COLORS.textMuted }}>Character:</span> <span style={{ color: COLORS.text }}>{yeast.character}</span></div>
+          <h3 style={{ ...styles.h3, marginTop: 0 }}>🧫 Yeast Selection</h3>
+          <div style={{ marginBottom: 12 }}>
+            {YEAST_DB.map(y => {
+              const isRec = y.id === recommendedYeast.id;
+              const isSel = y.id === yeast.id;
+              return (
+                <div key={y.id} onClick={() => update("yeastId", y.id)} style={{
+                  padding: "10px 14px", marginBottom: 6, borderRadius: 8, cursor: "pointer",
+                  border: `1px solid ${isSel ? COLORS.gold : COLORS.border}`,
+                  background: isSel ? COLORS.goldDim + "25" : COLORS.surface,
+                  transition: "all 0.15s",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: isSel ? COLORS.goldLight : COLORS.text }}>{y.name}</span>
+                    {isRec && <span style={{ ...styles.badge("gold"), fontSize: 9 }}>★ SUGGESTED</span>}
+                    {isSel && <span style={{ ...styles.badge("green"), fontSize: 9 }}>SELECTED</span>}
+                  </div>
+                  <div style={{ display: "flex", gap: 12, fontSize: 13, color: COLORS.textMuted, marginTop: 4, flexWrap: "wrap" }}>
+                    <span>Tol: {y.tolerance}%</span>
+                    <span>{y.tempRange}</span>
+                    <span>{y.character}</span>
+                  </div>
+                  {isSel && <p style={{ color: COLORS.textMuted, fontSize: 12, marginTop: 6, fontStyle: "italic" }}>{y.notes}</p>}
+                  {isSel && y.tolerance < abvTarget && (
+                    <p style={{ color: COLORS.accentLight, fontSize: 12, marginTop: 4, fontWeight: 600 }}>⚠️ This yeast's tolerance ({y.tolerance}%) is below your target ABV (~{abvTarget}%). It may stop fermenting early, leaving residual sweetness.</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8, fontStyle: "italic" }}>{yeast.notes}</p>
         </div>
 
         <div style={styles.card}>
@@ -860,7 +1164,7 @@ function MeadBrewingApp() {
           <div style={{ fontSize: 15, lineHeight: 2, color: COLORS.text }}>
             {[
               `${honey.lbs} lbs ${rb.honeyType} honey`,
-              `${rb.batchSize} gallon${rb.batchSize !== "1" ? "s" : ""} spring water (non-chlorinated)`,
+              `${rb.batchSize} gallon${rb.batchSize !== "1" ? "s" : ""} ${LIQUID_BASES.find(l => l.id === rb.liquid)?.name || "spring water"}`,
               `1 packet ${yeast.name}`,
               `Fermaid-O or Fermaid-K (yeast nutrient)`,
               `1 gallon glass carboy or food-safe bucket`,
@@ -887,24 +1191,6 @@ function MeadBrewingApp() {
       </div>
     );
 
-    const saveBatch = () => {
-      const batch = {
-        id: generateId(),
-        name: rb.batchName || `${meadType.name} — ${new Date().toLocaleDateString()}`,
-        meadType, sweetness: rb.sweetness, abv: rb.abv, abvTarget,
-        honeyType: rb.honeyType, batchSize: rb.batchSize,
-        fruits: [...rb.fruits], spices: [...rb.spices], extras: [...rb.extras],
-        honeyLbs: honey.lbs, og: honey.og, yeast,
-        schedule, brewDays: rb.brewDays,
-        createdAt: new Date().toISOString(),
-        completedSteps: [],
-        notes: [],
-      };
-      setBatches(prev => [batch, ...prev]);
-      setViewingBatch(batch);
-      setTab("batchDetail");
-      showToast("Batch saved! Happy brewing 🍯");
-    };
   };
 
   // ─── Batch List ────────────────────────────────────────────────────────
