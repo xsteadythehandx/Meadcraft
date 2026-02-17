@@ -1674,9 +1674,8 @@ function MeadBrewingApp() {
               <div key={idx} style={{ marginBottom: 8, position: "relative" }}>
                 <div style={{ position: "absolute", left: -26, ...styles.phaseDot(step.phase), border: isToday ? `2px solid ${COLORS.goldLight}` : "none", width: isToday ? 14 : 10, height: isToday ? 14 : 10, marginTop: isToday ? 14 : 16 }} />
                 <div
-                  onClick={() => toggleExpand(idx)}
                   style={{
-                    cursor: "pointer", padding: "12px 14px",
+                    padding: "12px 14px",
                     borderRadius: isExpanded ? "8px 8px 0 0" : 8,
                     background: isExpanded ? COLORS.surface : "transparent",
                     border: isExpanded ? `1px solid ${COLORS.border}` : "1px solid transparent",
@@ -1685,7 +1684,15 @@ function MeadBrewingApp() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ color: COLORS.textDim, fontSize: 12, transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                    <span
+                      onClick={() => toggleExpand(idx)}
+                      style={{
+                        color: COLORS.textDim, fontSize: 14, cursor: "pointer",
+                        transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                        padding: "4px 6px", borderRadius: 4, userSelect: "none",
+                        background: "transparent",
+                      }}
+                    >▶</span>
                     <span style={{ fontSize: 15, fontWeight: 700, color: allDone ? COLORS.success : isToday ? COLORS.goldLight : isFuture ? COLORS.text : COLORS.textMuted, flex: 1 }}>
                       {step.label}
                     </span>
