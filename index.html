@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meadcraft">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e0c0a">
+<title>Meadcraft — Mead Brewing Companion</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍯</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body, #root { background: #0e0c0a; min-height: 100vh; min-height: 100dvh; }
+body { padding-bottom: env(safe-area-inset-bottom); }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+
+
+// localStorage persistence wrapper
+const usePersistedState = (key, initial) => {
+  const [val, setVal] = React.useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial; }
+    catch { return initial; }
+  });
+  React.useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [val]);
+  return [val, setVal];
+};
+
+
+
+
+// ─── Data Constants ───────────────────────────────────────────────────────────
+
+const YEAST_DB = [
+  { id: "71b", name: "Lalvin 71B-1122", tolerance: 14, character: "Fruity, smooth", best: "Melomels, session meads", tempRange: "59-86°F", notes: "Metabolizes malic acid, softening fruit meads. Great for beginners." },
+  { id: "d47", name: "Lalvin D-47", tolerance: 14, character: "Floral, spicy", best: "Traditional, metheglin", tempRange: "59-68°F", notes: "Enhances mouthfeel. Keep temps LOW or it produces fusels. Ages well." },
+  { id: "k1v", name: "Lalvin K1-V1116", tolerance: 18, character: "Clean, neutral", best: "High ABV meads, stuck ferments", tempRange: "59-86°F", notes: "Very strong fermenter. Will go bone dry if given enough nutrients." },
+  { id: "ec1118", name: "Lalvin EC-1118", tolerance: 18, character: "Very clean, neutral", best: "Sparkling mead, high ABV, restarts", tempRange: "50-86°F", notes: "The workhorse. Ferments fast and clean. Can strip delicate flavors." },
+  { id: "qa23", name: "Lalvin QA23", tolerance: 16, character: "Clean, tropical hints", best: "Fruit meads, hydromel", tempRange: "59-90°F", notes: "Preserves fruit aromatics. Good nutrient needs." },
+  { id: "dv10", name: "Lalvin DV10", tolerance: 18, character: "Very clean", best: "Sparkling, high ABV", tempRange: "50-95°F", notes: "Champagne-style yeast. Fast fermentation." },
+  { id: "rc212", name: "Lalvin RC-212", tolerance: 14, character: "Berry, earthy", best: "Dark fruit melomels", tempRange: "64-86°F", notes: "Brings out red fruit character. Moderate fermenter." },
+  { id: "us05", name: "Safale US-05", tolerance: 11, character: "Clean, mild", best: "Braggots, low ABV session", tempRange: "59-75°F", notes: "Ale yeast. Great for braggots and low-gravity brews." },
+];
+
+const HONEY_TYPES = [
+  { name: "Wildflower", flavor: "Complex, floral", color: "Amber", gravity: 1.035, notes: "Most common. Great all-around choice.", intensity: "medium" },
+  { name: "Clover", flavor: "Mild, sweet", color: "Light", gravity: 1.035, notes: "Very mild, lets other ingredients shine.", intensity: "light" },
+  { name: "Orange Blossom", flavor: "Citrusy, light", color: "Light amber", gravity: 1.035, notes: "Classic choice for traditionals and melomels.", intensity: "light" },
+  { name: "Buckwheat", flavor: "Bold, molasses-like", color: "Dark", gravity: 1.035, notes: "Very strong flavor. Use sparingly or blend.", intensity: "heavy" },
+  { name: "Mesquite", flavor: "Earthy, smoky", color: "Medium", gravity: 1.035, notes: "Unique southwestern character.", intensity: "heavy" },
+  { name: "Tupelo", flavor: "Smooth, buttery", color: "Light amber", gravity: 1.035, notes: "Premium honey. Never crystallizes.", intensity: "medium" },
+  { name: "Meadowfoam", flavor: "Vanilla, marshmallow", color: "Light", gravity: 1.035, notes: "Distinct vanilla note. Great for dessert meads.", intensity: "medium" },
+];
+
+const MEAD_TYPES = {
+  traditional: { name: "Traditional Mead (Show Mead)", desc: "Honey, water, yeast — pure and simple", icon: "🍯" },
+  melomel: { name: "Melomel", desc: "Mead with fruit", icon: "🍇" },
+  metheglin: { name: "Metheglin", desc: "Mead with herbs/spices", icon: "🌿" },
+  cyser: { name: "Cyser", desc: "Mead with apple juice/cider", icon: "🍎" },
+  pyment: { name: "Pyment", desc: "Mead with grape juice", icon: "🍷" },
+  braggot: { name: "Braggot", desc: "Mead with malt/hops", icon: "🍺" },
+  melomelMetheglin: { name: "Metheglin Melomel", desc: "Mead with fruit AND spices", icon: "🌶️" },
+  capsicumel: { name: "Capsicumel", desc: "Mead with hot peppers", icon: "🔥" },
+  bochet: { name: "Bochet", desc: "Mead with caramelized honey", icon: "🫕" },
+  acerglyn: { name: "Acerglyn", desc: "Mead with maple syrup", icon: "🍁" },
+  rhodomel: { name: "Rhodomel", desc: "Mead with rose petals", icon: "🌹" },
+};
+
+const SWEETNESS_LEVELS = [
+  { id: "dry", name: "Dry", fg: "0.990 – 1.006", desc: "No residual sweetness, crisp finish", ogAdjust: 0 },
+  { id: "semi-sweet", name: "Semi-Sweet", fg: "1.006 – 1.015", desc: "Slight sweetness, balanced", ogAdjust: 0.008 },
+  { id: "sweet", name: "Sweet", fg: "1.015 – 1.025", desc: "Noticeably sweet, dessert-like", ogAdjust: 0.018 },
+  { id: "very-sweet", name: "Very Sweet (Sack)", fg: "1.025 – 1.050", desc: "Very sweet, thick, rich", ogAdjust: 0.035 },
+];
+
+const ABV_RANGES = [
+  { id: "session", name: "Session / Hydromel", range: "3–7%", target: 5, desc: "Light, refreshing, quick to drink" },
+  { id: "standard", name: "Standard", range: "7–14%", target: 11, desc: "Classic mead strength" },
+  { id: "strong", name: "Strong / Sack", range: "14–18%", target: 16, desc: "Bold, rich, needs aging" },
+];
+
+const FRUIT_ADDITIONS = [
+  "Strawberry", "Blueberry", "Raspberry", "Blackberry", "Cherry", "Peach",
+  "Mango", "Pineapple", "Pomegranate", "Cranberry", "Fig", "Elderberry",
+  "Passionfruit", "Lemon", "Orange", "Lime", "Grapefruit", "Plum",
+  "Apricot", "Banana", "Coconut", "Dragonfruit",
+];
+
+const SPICE_ADDITIONS = [
+  "Cinnamon", "Vanilla Bean", "Ginger", "Clove", "Nutmeg", "Star Anise",
+  "Cardamom", "Black Pepper", "Allspice", "Coriander", "Lavender",
+  "Rose Petals", "Hibiscus", "Chamomile", "Rosemary", "Thyme", "Sage",
+  "Juniper Berry", "Oak Chips", "Cocoa Nibs", "Coffee Beans", "Tea (Earl Grey)",
+  "Saffron", "Lemongrass", "Mint", "Basil", "Bay Leaf",
+];
+
+const DICTIONARY = [
+  { term: "ABV", def: "Alcohol By Volume — the percentage of alcohol in your finished mead." },
+  { term: "Acerglyn", def: "A mead made with maple syrup in addition to honey." },
+  { term: "Adjunct", def: "Any ingredient added beyond honey, water, and yeast (fruits, spices, etc.)." },
+  { term: "Aging", def: "Letting mead sit after fermentation to develop flavors and smooth out harshness. Patience pays off!" },
+  { term: "Autolysis", def: "Off-flavors caused by dead yeast breaking down. Prevented by racking off the lees." },
+  { term: "Back-sweetening", def: "Adding honey or sugar after fermentation to increase sweetness. Must stabilize first!" },
+  { term: "Bochet", def: "A mead made with caramelized (cooked) honey, giving toffee/caramel notes." },
+  { term: "Braggot", def: "A hybrid of mead and beer — made with both honey and malted grains." },
+  { term: "Campden Tablet", def: "Potassium metabisulfite tablet used to stabilize mead and prevent wild yeast/bacteria." },
+  { term: "Capsicumel", def: "A mead made with hot chili peppers." },
+  { term: "Carboy", def: "A large glass or plastic jug (usually 1–6 gallons) used as a fermentation vessel." },
+  { term: "Cold Crash", def: "Chilling mead to near-freezing to drop yeast and sediment out of suspension for clarity." },
+  { term: "Cyser", def: "A mead made with apple juice or cider instead of (or alongside) water." },
+  { term: "Degassing", def: "Releasing dissolved CO₂ from mead during fermentation, usually by stirring vigorously." },
+  { term: "Dry Mead", def: "Mead with little to no residual sugar, giving a crisp finish (FG below 1.006)." },
+  { term: "Fermentation", def: "The process where yeast converts sugar (from honey) into alcohol and CO₂." },
+  { term: "Final Gravity (FG)", def: "The specific gravity reading after fermentation. Lower = drier mead, more sugar consumed." },
+  { term: "Fining Agent", def: "Substance (bentonite, gelatin, etc.) added to clarify mead by binding to haze particles." },
+  { term: "Fusel Alcohols", def: "Harsh, hot-tasting alcohols produced by stressed yeast. Avoided by proper temp control and nutrition." },
+  { term: "Hydromel", def: "A low-alcohol mead (typically 3–7% ABV). Light, refreshing, quick to make." },
+  { term: "Hydrometer", def: "A tool that measures the density (specific gravity) of your must/mead to track fermentation." },
+  { term: "Lees", def: "Dead yeast and sediment that settles to the bottom of your fermenter." },
+  { term: "Melomel", def: "A mead made with fruit (other than apples or grapes, which have their own names)." },
+  { term: "Metheglin", def: "A mead made with herbs and/or spices." },
+  { term: "Must", def: "The unfermented mixture of honey and water (and any additions) before/during fermentation." },
+  { term: "Nutrient (YAN)", def: "Yeast Assimilable Nitrogen — nutrients added to feed yeast. Honey is nutrient-poor, so supplementation is critical." },
+  { term: "Original Gravity (OG)", def: "The specific gravity of your must before fermentation begins. Determines potential ABV." },
+  { term: "Oxidation", def: "Exposure to oxygen after fermentation, causing stale or cardboard-like off-flavors." },
+  { term: "Pitching", def: "Adding yeast to your must to begin fermentation." },
+  { term: "Primary Fermentation", def: "The first, most vigorous phase of fermentation (typically 2–4 weeks)." },
+  { term: "Potassium Sorbate", def: "A stabilizer that prevents yeast from reproducing. Used before back-sweetening." },
+  { term: "Pyment", def: "A mead made with grape juice." },
+  { term: "Racking", def: "Transferring mead from one vessel to another, leaving sediment behind. Key for clarity." },
+  { term: "Rhodomel", def: "A mead made with rose petals or rose hips." },
+  { term: "Sack Mead", def: "A very sweet, high-alcohol mead. Uses lots of honey." },
+  { term: "Sanitize", def: "Cleaning equipment with a no-rinse sanitizer (Star San) to prevent contamination. THE #1 RULE OF BREWING." },
+  { term: "Secondary Fermentation", def: "A calmer phase after primary, where mead clarifies and flavors develop." },
+  { term: "Specific Gravity (SG)", def: "A measure of liquid density relative to water (1.000). Higher = more sugar." },
+  { term: "Stabilize", def: "Adding potassium sorbate + campden tablets to prevent renewed fermentation." },
+  { term: "Step Feeding", def: "Adding honey in stages rather than all at once, to manage yeast stress and hit high ABVs." },
+  { term: "Stuck Fermentation", def: "When fermentation stops prematurely. Often caused by nutrient deficiency or temperature issues." },
+  { term: "Tannin", def: "A compound that adds astringency/mouthfeel. Found in tea, oak, grape skins, and some fruits." },
+  { term: "Terroir", def: "The environmental factors that affect the character of honey (and thus mead)." },
+  { term: "Traditional Mead", def: "Also called 'Show Mead.' Made with only honey, water, and yeast." },
+  { term: "YAN", def: "Yeast Assimilable Nitrogen — the total nitrogen available to yeast. Critical for healthy fermentation." },
+];
+
+// ─── Compatibility Engine ─────────────────────────────────────────────────────
+
+function getCompatibilityWarnings(rb) {
+  const warnings = []; // { level: "error"|"warn"|"info"|"ok", icon, title, detail }
+  const { sweetness, abv, honeyType, fruits, spices, extras, brewDays } = rb;
+  const abvTarget = ABV_RANGES.find(a => a.id === abv)?.target || 11;
+  const honeyInfo = HONEY_TYPES.find(h => h.name === honeyType);
+  const days = parseInt(brewDays) || 60;
+
+  // ── Flavor Clashes ──────────────────────────────────────────────────
+
+  // Citrus + delicate florals fight
+  const hasCitrus = fruits.some(f => ["Lemon", "Lime", "Grapefruit", "Orange", "Pineapple"].includes(f));
+  const hasDelicateFloral = spices.some(s => ["Lavender", "Chamomile", "Rose Petals"].includes(s));
+  if (hasCitrus && hasDelicateFloral) {
+    warnings.push({ level: "warn", icon: "⚔️", title: "Flavor Clash: Citrus vs. Delicate Florals", detail: "Strong citrus fruits tend to overpower delicate floral notes like lavender and chamomile. The florals may get lost entirely. Consider picking one direction — bright citrus OR soft floral." });
+  }
+
+  // Banana + savory herbs is weird
+  if (fruits.includes("Banana") && spices.some(s => ["Rosemary", "Thyme", "Sage", "Bay Leaf", "Basil"].includes(s))) {
+    warnings.push({ level: "warn", icon: "🤔", title: "Unusual Pairing: Banana + Savory Herbs", detail: "Banana's tropical sweetness tends to clash with savory culinary herbs. This combination can taste confused. If you want tropical, try ginger or vanilla instead." });
+  }
+
+  // Too many competing strong flavors
+  const strongFlavors = [];
+  if (fruits.includes("Pineapple")) strongFlavors.push("Pineapple");
+  if (fruits.includes("Mango")) strongFlavors.push("Mango");
+  if (fruits.includes("Passionfruit")) strongFlavors.push("Passionfruit");
+  if (fruits.includes("Grapefruit")) strongFlavors.push("Grapefruit");
+  if (fruits.includes("Cranberry")) strongFlavors.push("Cranberry");
+  if (fruits.includes("Pomegranate")) strongFlavors.push("Pomegranate");
+  if (spices.includes("Coffee Beans")) strongFlavors.push("Coffee");
+  if (spices.includes("Cocoa Nibs")) strongFlavors.push("Cocoa");
+  if (strongFlavors.length >= 3) {
+    warnings.push({ level: "warn", icon: "🎭", title: "Too Many Strong Flavors Competing", detail: `You've selected ${strongFlavors.join(", ")} — these are all bold, dominant flavors that will fight for attention. Consider featuring 1–2 stars and supporting them with subtler additions.` });
+  }
+
+  // Mint + many other things
+  if (spices.includes("Mint") && fruits.length > 2) {
+    warnings.push({ level: "info", icon: "🌿", title: "Mint Dominates Fruit Blends", detail: "Mint is very assertive and can mask the flavors of multiple fruits. It pairs best with a single fruit (like berry or citrus) rather than complex fruit blends." });
+  }
+
+  // Coffee + light/delicate fruits
+  if (spices.includes("Coffee Beans") && fruits.some(f => ["Peach", "Apricot", "Strawberry", "Dragonfruit", "Lemon"].includes(f))) {
+    warnings.push({ level: "warn", icon: "☕", title: "Coffee Overpowers Delicate Fruits", detail: "Coffee's bold roasted flavor will completely dominate light fruits like peach, apricot, and strawberry. Coffee pairs better with cherry, blackberry, or chocolate-adjacent flavors." });
+  }
+
+  // Coconut works in limited combos
+  if (fruits.includes("Coconut") && spices.some(s => ["Rosemary", "Thyme", "Sage", "Juniper Berry", "Bay Leaf"].includes(s))) {
+    warnings.push({ level: "warn", icon: "🥥", title: "Coconut + Savory Herbs: Odd Combo", detail: "Coconut's tropical sweetness clashes with earthy, savory herbs. Coconut works better with vanilla, cinnamon, or tropical spices." });
+  }
+
+  // Classic good pairings — positive feedback
+  if (fruits.includes("Cherry") && spices.includes("Vanilla Bean")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Cherry + Vanilla", detail: "A classic combination. Vanilla rounds out cherry's tartness beautifully." });
+  }
+  if (fruits.includes("Blueberry") && spices.includes("Lavender")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Blueberry + Lavender", detail: "A natural match — lavender enhances blueberry's floral side without overwhelming it." });
+  }
+  if (fruits.includes("Peach") && spices.includes("Ginger")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Peach + Ginger", detail: "Ginger's warmth lifts peach's sweetness. A crowd-pleaser." });
+  }
+  if (fruits.includes("Raspberry") && spices.includes("Hibiscus")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Raspberry + Hibiscus", detail: "Both tart and vibrant — hibiscus deepens raspberry's color and flavor." });
+  }
+  if ((fruits.includes("Cherry") || fruits.includes("Blackberry")) && spices.includes("Oak Chips")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Dark Fruit + Oak", detail: "Oak adds tannin and complexity that complements dark fruits beautifully, like a fine wine." });
+  }
+  if (spices.includes("Cocoa Nibs") && spices.includes("Vanilla Bean")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Cocoa + Vanilla", detail: "Think chocolate bar in mead form. A dessert lover's dream." });
+  }
+  if (fruits.includes("Mango") && spices.includes("Black Pepper")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Mango + Black Pepper", detail: "A surprising but well-known culinary pairing. The pepper's heat brings out mango's depth." });
+  }
+  if (fruits.includes("Apple") && spices.includes("Cinnamon")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Classic Pairing: Apple + Cinnamon", detail: "A timeless combination. Hard to go wrong here." });
+  }
+  if (fruits.includes("Pineapple") && spices.includes("Ginger") && !spices.includes("Coffee Beans")) {
+    warnings.push({ level: "ok", icon: "👌", title: "Great Pairing: Pineapple + Ginger", detail: "Tropical heat — ginger and pineapple are natural partners." });
+  }
+
+  // ── Honey Compatibility ─────────────────────────────────────────────
+
+  if (honeyInfo?.intensity === "heavy" && fruits.length > 0) {
+    const delicate = fruits.filter(f => ["Strawberry", "Peach", "Apricot", "Dragonfruit", "Coconut"].includes(f));
+    if (delicate.length > 0) {
+      warnings.push({ level: "warn", icon: "🍯", title: `${honeyType} Honey May Overpower ${delicate.join(", ")}`, detail: `${honeyType} has a very strong, bold flavor that can drown out delicate fruits. Consider Clover or Orange Blossom honey to let your fruits shine, or embrace the honey-forward character.` });
+    }
+  }
+
+  if (honeyType === "Buckwheat" && hasDelicateFloral) {
+    warnings.push({ level: "warn", icon: "🍯", title: "Buckwheat Overwhelms Delicate Florals", detail: "Buckwheat's intense, molasses-like flavor will completely mask lavender, chamomile, or rose. Use a lighter honey for floral metheglins." });
+  }
+
+  if (honeyType === "Meadowfoam" && spices.includes("Vanilla Bean")) {
+    warnings.push({ level: "info", icon: "🍯", title: "Double Vanilla — Intentional?", detail: "Meadowfoam honey already has a natural vanilla/marshmallow character. Adding vanilla bean will double down on that note. Great if you want a vanilla bomb, but just know it may be one-dimensional." });
+  }
+
+  if (honeyType === "Orange Blossom" && fruits.includes("Orange")) {
+    warnings.push({ level: "info", icon: "🍊", title: "Orange on Orange", detail: "Orange Blossom honey already has citrus notes. Adding orange fruit will really lean into that flavor. Works great — just know you're going all-in on citrus character." });
+  }
+
+  // ── ABV + Sweetness Compatibility ───────────────────────────────────
+
+  if (abv === "session" && sweetness === "very-sweet") {
+    warnings.push({ level: "error", icon: "⚠️", title: "Incompatible: Low ABV + Very Sweet", detail: "To make a very sweet mead at session strength, the yeast would need to stop fermenting extremely early. This is very difficult to control and often results in a stuck fermentation or an unpredictable outcome. Choose Semi-Sweet at most for a hydromel, or increase ABV." });
+  }
+
+  if (abv === "session" && sweetness === "sweet") {
+    warnings.push({ level: "warn", icon: "⚠️", title: "Tricky Combo: Low ABV + Sweet", detail: "Achieving sweetness at low ABV requires careful yeast management and back-sweetening with stabilization. Doable, but not beginner-friendly. Consider Semi-Sweet for easier results." });
+  }
+
+  if (abv === "strong" && sweetness === "dry") {
+    warnings.push({ level: "info", icon: "💪", title: "Dry + Strong = Hot Alcohol", detail: "High ABV dry meads can taste very 'hot' (harsh alcohol burn) without sweetness to balance. This style needs significant aging time (6–12+ months) to smooth out. Make sure your brew timeline accounts for this." });
+  }
+
+  // ── Timeline Warnings ───────────────────────────────────────────────
+
+  if (abv === "strong" && days < 90) {
+    warnings.push({ level: "error", icon: "⏰", title: "Timeline Too Short for High ABV", detail: `Strong meads (14–18% ABV) need time — fermentation alone can take 4–6 weeks, and they really need 3–6+ months of aging to not taste like rocket fuel. ${days} days isn't enough. Recommend at least 120 days, ideally 180+.` });
+  }
+
+  if (abv === "standard" && days < 45) {
+    warnings.push({ level: "warn", icon: "⏰", title: "Very Tight Timeline", detail: `${days} days is cutting it close for a standard mead. Primary fermentation takes 2–3 weeks, leaving little time for clearing and aging. You might end up with a cloudy, rough mead. Consider 60+ days.` });
+  }
+
+  if (days > 300 && abv === "session") {
+    warnings.push({ level: "info", icon: "⏰", title: "Long Aging for a Session Mead", detail: "Session/hydromel meads are meant to be fresh and drinkable. 10+ months of aging may cause the light flavors to fade. These are best at 30–60 days." });
+  }
+
+  if (fruits.length > 0 && days < 45) {
+    warnings.push({ level: "warn", icon: "🍇", title: "Fruit Needs Time in Secondary", detail: "Fruit additions need at least 2–4 weeks in secondary to properly extract flavor and settle. With your current timeline, you may not get full fruit expression." });
+  }
+
+  // ── Ingredient Volume Warnings ──────────────────────────────────────
+
+  if (fruits.length > 4) {
+    warnings.push({ level: "warn", icon: "🎨", title: `${fruits.length} Fruits — Flavor Muddling Risk`, detail: "More than 4 fruits tends to create a muddy, indistinct flavor where nothing stands out. The best melomels usually feature 1–2 star fruits with maybe 1 supporting fruit. Consider simplifying." });
+  } else if (fruits.length === 3 || fruits.length === 4) {
+    warnings.push({ level: "info", icon: "🍹", title: `${fruits.length} Fruits Selected`, detail: "Multiple fruits can work well if they're in the same flavor family (all berries, all tropical, all stone fruit). Make sure yours complement each other." });
+  }
+
+  if (spices.length > 4) {
+    warnings.push({ level: "warn", icon: "🌶️", title: `${spices.length} Spices — Complexity Overload`, detail: "With this many spices, your mead risks tasting like a spice cabinet. Each spice needs room to express itself. Consider narrowing to 2–3 that tell a cohesive flavor story (like 'chai': cinnamon + cardamom + ginger)." });
+  }
+
+  // ── Specific Tricky Ingredients ─────────────────────────────────────
+
+  if (spices.includes("Saffron") && (fruits.length > 1 || spices.length > 2)) {
+    warnings.push({ level: "info", icon: "🌾", title: "Saffron is Subtle and Expensive", detail: "Saffron's delicate flavor is easily buried by other strong ingredients. For saffron to shine, keep the recipe simple — ideally just saffron with a light honey. You don't want to waste it." });
+  }
+
+  if (spices.includes("Star Anise") && !["sweet", "very-sweet"].includes(sweetness)) {
+    warnings.push({ level: "info", icon: "⭐", title: "Star Anise in Dry Mead", detail: "Star anise's licorice flavor can taste medicinal without some sweetness to balance it. Consider semi-sweet or sweet for better results with anise." });
+  }
+
+  if (spices.includes("Clove")) {
+    warnings.push({ level: "info", icon: "🫚", title: "Clove — Use Sparingly!", detail: "Clove is extremely potent. Even a small amount can dominate your entire batch. Start with 1–2 cloves per gallon max, and add in secondary so you can taste and remove them." });
+  }
+
+  if (fruits.includes("Banana")) {
+    warnings.push({ level: "info", icon: "🍌", title: "Banana — Processing Matters", detail: "Banana can add a nice tropical character but tends to create a lot of pectin haze. Use pectic enzyme to help with clarity. Overripe bananas work best for flavor extraction." });
+  }
+
+  if (fruits.includes("Cranberry") && sweetness === "dry") {
+    warnings.push({ level: "warn", icon: "🫐", title: "Dry Cranberry Mead = Very Tart", detail: "Cranberries are already very tart. Without residual sweetness to balance, this will be aggressively sour. Consider at least semi-sweet, or pair cranberry with a sweeter fruit." });
+  }
+
+  if (spices.includes("Lemongrass") && spices.includes("Cinnamon")) {
+    warnings.push({ level: "warn", icon: "🌿", title: "Lemongrass + Cinnamon: Competing Directions", detail: "Lemongrass pushes toward bright, Thai-inspired flavors while cinnamon goes warm and autumnal. These pull the mead in opposite directions. Pick a lane." });
+  }
+
+  if (extras.includes("caramelized") && (hasDelicateFloral || fruits.some(f => ["Strawberry", "Peach", "Dragonfruit"].includes(f)))) {
+    warnings.push({ level: "warn", icon: "🫕", title: "Bochet Overpowers Delicate Additions", detail: "Caramelized honey has an intense toffee/burnt sugar flavor that will dominate anything subtle. Pair with bold flavors (dark fruits, coffee, chocolate) or let the bochet character speak for itself." });
+  }
+
+  if (extras.includes("malt") && fruits.length > 2) {
+    warnings.push({ level: "info", icon: "🍺", title: "Braggot + Lots of Fruit = Identity Crisis", detail: "Braggots already blend mead and beer styles. Adding many fruits on top creates a complex mix that can be hard to balance. Consider keeping the fruit simple (1–2 max) for a braggot." });
+  }
+
+  if (extras.includes("maple") && honeyType === "Buckwheat") {
+    warnings.push({ level: "warn", icon: "🍁", title: "Maple + Buckwheat = Very Heavy", detail: "Both maple syrup and buckwheat honey are bold and dark. Combined, they may produce an overwhelmingly heavy, molasses-like mead. Consider a lighter honey to let the maple speak." });
+  }
+
+  // ── Beginner-Friendly Nudges ────────────────────────────────────────
+
+  const totalAdditions = fruits.length + spices.length + extras.length;
+  if (totalAdditions === 0 && honeyInfo?.intensity !== "heavy") {
+    warnings.push({ level: "ok", icon: "🍯", title: "Clean Traditional — Great Choice", detail: "A traditional mead lets the honey shine. This is actually one of the best ways to learn the craft, since every flavor comes from the honey and fermentation itself." });
+  }
+
+  if (totalAdditions >= 6 && abv === "session") {
+    warnings.push({ level: "warn", icon: "📊", title: "Lots of Additions + Low ABV", detail: "Session meads have a lighter body that may not support this many additions. Strong flavors need alcohol to carry them. Consider reducing additions or increasing ABV." });
+  }
+
+  return warnings;
+}
+
+// ─── Utility Functions ────────────────────────────────────────────────────────
+
+function classifyMead(fruits, spices, extras) {
+  const hasFruit = fruits && fruits.length > 0;
+  const hasSpice = spices && spices.length > 0;
+  const hasApple = fruits?.some(f => f.toLowerCase().includes("apple"));
+  const hasGrape = fruits?.some(f => f.toLowerCase().includes("grape"));
+  const hasPepper = spices?.some(s => s.toLowerCase().includes("pepper") || s.toLowerCase().includes("chili") || s.toLowerCase().includes("habanero") || s.toLowerCase().includes("jalapeño"));
+  const hasMalt = extras?.includes("malt");
+  const hasMaple = extras?.includes("maple");
+  const hasRose = spices?.some(s => s.toLowerCase().includes("rose"));
+  const hasCaramelized = extras?.includes("caramelized");
+
+  if (hasCaramelized) return MEAD_TYPES.bochet;
+  if (hasMalt) return MEAD_TYPES.braggot;
+  if (hasMaple) return MEAD_TYPES.acerglyn;
+  if (hasRose && !hasFruit) return MEAD_TYPES.rhodomel;
+  if (hasPepper && !hasFruit) return MEAD_TYPES.capsicumel;
+  if (hasApple) return MEAD_TYPES.cyser;
+  if (hasGrape) return MEAD_TYPES.pyment;
+  if (hasFruit && hasSpice) return MEAD_TYPES.melomelMetheglin;
+  if (hasFruit) return MEAD_TYPES.melomel;
+  if (hasSpice) return MEAD_TYPES.metheglin;
+  return MEAD_TYPES.traditional;
+}
+
+function recommendYeast(targetABV, sweetness, fruits) {
+  const hasFruit = fruits && fruits.length > 0;
+  const candidates = YEAST_DB.filter(y => y.tolerance >= targetABV * 0.85);
+  if (candidates.length === 0) return YEAST_DB.find(y => y.id === "ec1118");
+  if (sweetness === "dry" && targetABV <= 14) {
+    const pick = candidates.find(y => y.id === "d47") || candidates.find(y => y.id === "qa23");
+    if (pick) return pick;
+  }
+  if (hasFruit) {
+    const pick = candidates.find(y => y.id === "71b") || candidates.find(y => y.id === "qa23");
+    if (pick) return pick;
+  }
+  if (targetABV > 14) {
+    const pick = candidates.find(y => y.id === "k1v") || candidates.find(y => y.id === "ec1118");
+    if (pick) return pick;
+  }
+  if (targetABV <= 7) {
+    const pick = candidates.find(y => y.id === "us05") || candidates.find(y => y.id === "71b");
+    if (pick) return pick;
+  }
+  return candidates.find(y => y.id === "71b") || candidates[0];
+}
+
+function calcHoney(targetABV, sweetness, gallons) {
+  const sw = SWEETNESS_LEVELS.find(s => s.id === sweetness);
+  const gravityPoints = (targetABV / 131.25 * 1000) + (sw ? sw.ogAdjust * 1000 : 0);
+  const og = 1 + gravityPoints / 1000;
+  const lbsPerGallon = gravityPoints / 35;
+  const totalLbs = lbsPerGallon * gallons;
+  return { og: og.toFixed(3), lbs: totalLbs.toFixed(1), lbsPerGallon: lbsPerGallon.toFixed(1) };
+}
+
+function generateSchedule(brewDays, targetABV, sweetness) {
+  const totalDays = parseInt(brewDays) || 60;
+  const isStrong = targetABV > 14;
+  const isSession = targetABV <= 7;
+  const schedule = [];
+
+  schedule.push({ day: 0, label: "Brew Day", tasks: ["Sanitize ALL equipment", "Heat water to ~100°F (not boiling!)", "Mix honey into water to create must", "Take OG reading with hydrometer", "Cool must to 65-75°F", "Pitch yeast", "Seal fermenter with airlock"], phase: "prep" });
+  schedule.push({ day: 1, label: "Day 1 — First Nutrient Addition", tasks: ["Degas must by swirling/stirring vigorously", "Add first nutrient dose (Fermaid-O recommended)", "Check for signs of fermentation (bubbles, foam)"], phase: "primary" });
+  schedule.push({ day: 2, label: "Day 2 — Degassing", tasks: ["Degas must by stirring", "Check airlock activity"], phase: "primary" });
+  schedule.push({ day: 3, label: "Day 3 — Second Nutrient Addition", tasks: ["Degas", "Add second nutrient dose"], phase: "primary" });
+  schedule.push({ day: 5, label: "Day 5 — Third Nutrient Addition", tasks: ["Degas", "Add third nutrient dose"], phase: "primary" });
+  schedule.push({ day: 7, label: "Day 7 — Final Nutrient (1/3 Sugar Break)", tasks: ["Take gravity reading", "If gravity has dropped ~1/3 from OG, add final nutrient dose", "This is the last nutrient addition — do NOT add more after this", "Continue degassing daily"], phase: "primary" });
+  schedule.push({ day: 14, label: "Day 14 — Gravity Check", tasks: ["Take gravity reading", "Fermentation should be slowing", "Stop degassing — minimize oxygen exposure from now on"], phase: "primary" });
+
+  const primaryEnd = isSession ? 14 : isStrong ? 28 : 21;
+  if (primaryEnd > 14) {
+    schedule.push({ day: primaryEnd, label: `Day ${primaryEnd} — End of Primary`, tasks: ["Take gravity reading (should be near or at target FG)", "If gravity is stable for 2–3 days, ready to rack", "Prepare secondary vessel — sanitize carboy"], phase: "primary" });
+  }
+
+  const rackDay = primaryEnd + 2;
+  schedule.push({ day: rackDay, label: `Day ${rackDay} — Rack to Secondary`, tasks: ["Rack mead off lees into clean, sanitized carboy", "Minimize splashing to avoid oxidation", "Top up airlock", "If adding fruit, add it now in a sanitized mesh bag", sweetness !== "dry" ? "If back-sweetening: stabilize with potassium sorbate + campden tablet first" : "For dry mead: no stabilization needed"].filter(Boolean), phase: "secondary" });
+
+  const bulkAgingStart = rackDay + 14;
+  if (bulkAgingStart < totalDays) {
+    schedule.push({ day: bulkAgingStart, label: `Day ${bulkAgingStart} — Check Clarity`, tasks: ["Check if mead is clearing", "If hazy, consider fining agent (bentonite or gelatin)", "Take gravity reading to confirm fermentation is complete", "Taste test — note any off-flavors that may age out"], phase: "secondary" });
+  }
+
+  const preBotDay = Math.max(totalDays - 7, bulkAgingStart + 7);
+  if (preBotDay < totalDays && preBotDay > bulkAgingStart) {
+    schedule.push({ day: preBotDay, label: `Day ${preBotDay} — Pre-Bottling`, tasks: ["Confirm FG is stable (same reading 3 days apart)", "Cold crash if possible (chill to near-freezing for 48hrs)", "Prepare bottles — sanitize everything", "Final taste test"], phase: "aging" });
+  }
+
+  schedule.push({ day: totalDays, label: `Day ${totalDays} — Bottling Day!`, tasks: ["Rack one final time off any sediment", "Fill bottles, leaving ~1 inch headspace", "Cork or cap bottles", isStrong ? "Strong meads benefit from 6–12+ months of bottle aging" : isSession ? "Session meads can be enjoyed within a few weeks!" : "Standard meads improve with 3–6 months of bottle aging"], phase: "bottling" });
+
+  if (isStrong) {
+    schedule.push({ day: totalDays + 180, label: `Day ${totalDays + 180} — Suggested First Tasting`, tasks: ["Open a bottle and taste!", "Note: strong meads keep improving for years", "Compare against later bottles to see how it evolves"], phase: "enjoy" });
+  } else if (!isSession) {
+    schedule.push({ day: totalDays + 90, label: `Day ${totalDays + 90} — Suggested First Tasting`, tasks: ["Open a bottle!", "Standard meads are often great at 3 months", "Save some for later — it keeps getting better"], phase: "enjoy" });
+  }
+
+  return schedule;
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// ─── Style Constants ──────────────────────────────────────────────────────────
+
+const COLORS = {
+  bg: "#0e0c0a",
+  surface: "#1a1714",
+  surfaceHover: "#252119",
+  card: "#1f1b16",
+  border: "#3a3228",
+  borderLight: "#4a4035",
+  gold: "#d4a84b",
+  goldLight: "#e8c46f",
+  goldDim: "#8a6f30",
+  honey: "#f0b429",
+  amber: "#c17e2d",
+  text: "#e8ddd0",
+  textMuted: "#9a8e7e",
+  textDim: "#6a5e50",
+  accent: "#c44e2f",
+  accentLight: "#e06040",
+  success: "#5a9a4a",
+  successBg: "#1a2a15",
+  danger: "#c44e2f",
+  dangerBg: "#2a1510",
+  warnBg: "#2a2210",
+  warnBorder: "#8a6f20",
+  infoBg: "#101a2a",
+  infoBorder: "#2a5080",
+  infoText: "#6aa0d0",
+  okBg: "#142014",
+  okBorder: "#2a6a2a",
+};
+
+// ─── Warning Display Component ────────────────────────────────────────────────
+
+function WarningPanel({ warnings }) {
+  const [collapsed, setCollapsed] = useState({});
+
+  if (!warnings || warnings.length === 0) return null;
+
+  const errors = warnings.filter(w => w.level === "error");
+  const warns = warnings.filter(w => w.level === "warn");
+  const infos = warnings.filter(w => w.level === "info");
+  const oks = warnings.filter(w => w.level === "ok");
+
+  const levelStyle = (level) => {
+    switch (level) {
+      case "error": return { bg: COLORS.dangerBg, border: COLORS.danger, color: COLORS.accentLight, label: "PROBLEM" };
+      case "warn": return { bg: COLORS.warnBg, border: COLORS.warnBorder, color: COLORS.honey, label: "HEADS UP" };
+      case "info": return { bg: COLORS.infoBg, border: COLORS.infoBorder, color: COLORS.infoText, label: "NOTE" };
+      case "ok": return { bg: COLORS.okBg, border: COLORS.okBorder, color: COLORS.success, label: "NICE" };
+      default: return { bg: COLORS.card, border: COLORS.border, color: COLORS.text, label: "" };
+    }
+  };
+
+  const sortedWarnings = [...errors, ...warns, ...infos, ...oks];
+
+  const summaryColor = errors.length > 0 ? COLORS.danger : warns.length > 0 ? COLORS.honey : COLORS.success;
+  const summaryIcon = errors.length > 0 ? "🛑" : warns.length > 0 ? "⚠️" : oks.length > 0 ? "✅" : "ℹ️";
+  const summaryText = errors.length > 0
+    ? `${errors.length} problem${errors.length > 1 ? "s" : ""} found`
+    : warns.length > 0
+      ? `${warns.length} thing${warns.length > 1 ? "s" : ""} to consider`
+      : oks.length > 0
+        ? `Looking good!${infos.length > 0 ? ` (${infos.length} note${infos.length > 1 ? "s" : ""})` : ""}`
+        : `${infos.length} note${infos.length > 1 ? "s" : ""}`;
+
+  return (
+    <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
+        background: COLORS.surface, borderRadius: "10px 10px 0 0", border: `1px solid ${COLORS.border}`,
+        borderBottom: "none",
+      }}>
+        <span style={{ fontSize: 18 }}>{summaryIcon}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: summaryColor, textTransform: "uppercase", letterSpacing: 1 }}>
+          Compatibility Check
+        </span>
+        <span style={{ fontSize: 13, color: COLORS.textMuted, marginLeft: "auto" }}>{summaryText}</span>
+      </div>
+      <div style={{ border: `1px solid ${COLORS.border}`, borderRadius: "0 0 10px 10px", overflow: "hidden" }}>
+        {sortedWarnings.map((w, idx) => {
+          const ls = levelStyle(w.level);
+          const isOpen = !collapsed[idx];
+          return (
+            <div key={idx} style={{
+              background: ls.bg, borderBottom: idx < sortedWarnings.length - 1 ? `1px solid ${COLORS.border}` : "none",
+              borderLeft: `3px solid ${ls.border}`,
+            }}>
+              <div
+                onClick={() => setCollapsed(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", cursor: "pointer" }}
+              >
+                <span style={{ fontSize: 16 }}>{w.icon}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: ls.color, flex: 1 }}>{w.title}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: ls.color, background: ls.border + "30", padding: "2px 8px", borderRadius: 10, textTransform: "uppercase", letterSpacing: 1 }}>{ls.label}</span>
+                <span style={{ color: COLORS.textDim, fontSize: 12, marginLeft: 4 }}>{isOpen ? "▾" : "▸"}</span>
+              </div>
+              {isOpen && (
+                <div style={{ padding: "0 14px 12px 38px", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.7 }}>
+                  {w.detail}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+function MeadBrewingApp() {
+  const [tab, setTab] = useState("home");
+  const [batches, setBatches] = usePersistedState("meadcraft_batches", []);
+  const [recipeBuilder, setRecipeBuilder] = useState(null);
+  const [viewingBatch, setViewingBatch] = useState(null);
+  const [dictSearch, setDictSearch] = useState("");
+  const [toastMsg, setToastMsg] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 2500);
+  };
+
+  const styles = {
+    app: { background: COLORS.bg, color: COLORS.text, minHeight: "100vh", fontFamily: "'Crimson Pro', 'Georgia', serif", position: "relative" },
+    container: { maxWidth: 800, margin: "0 auto", padding: "0 20px 100px" },
+    nav: { display: "flex", justifyContent: "center", gap: 4, padding: "16px 0", borderBottom: `1px solid ${COLORS.border}`, position: "sticky", top: 0, background: COLORS.bg, zIndex: 50 },
+    navBtn: (active) => ({ padding: "10px 16px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "'Crimson Pro', Georgia, serif", transition: "all 0.2s", background: active ? COLORS.gold : "transparent", color: active ? COLORS.bg : COLORS.textMuted, letterSpacing: 0.5 }),
+    h1: { fontSize: 36, fontWeight: 300, color: COLORS.goldLight, textAlign: "center", margin: "32px 0 8px", letterSpacing: 2 },
+    h2: { fontSize: 24, fontWeight: 400, color: COLORS.gold, margin: "28px 0 16px", letterSpacing: 1 },
+    h3: { fontSize: 18, fontWeight: 600, color: COLORS.goldLight, margin: "20px 0 10px" },
+    card: { background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 20, marginBottom: 16 },
+    label: { display: "block", fontSize: 13, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.5 },
+    input: { width: "100%", padding: "10px 14px", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 16, fontFamily: "'Crimson Pro', Georgia, serif", outline: "none", boxSizing: "border-box" },
+    select: { width: "100%", padding: "10px 14px", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 16, fontFamily: "'Crimson Pro', Georgia, serif", outline: "none", boxSizing: "border-box" },
+    btnPrimary: { padding: "12px 28px", background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.amber})`, color: COLORS.bg, border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "'Crimson Pro', Georgia, serif", letterSpacing: 0.5, transition: "all 0.2s" },
+    btnSecondary: { padding: "10px 20px", background: "transparent", color: COLORS.gold, border: `1px solid ${COLORS.goldDim}`, borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "'Crimson Pro', Georgia, serif", transition: "all 0.2s" },
+    btnDanger: { padding: "10px 20px", background: "transparent", color: COLORS.danger, border: `1px solid ${COLORS.danger}`, borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "'Crimson Pro', Georgia, serif" },
+    chip: (active) => ({ display: "inline-block", padding: "6px 14px", margin: "3px", borderRadius: 20, fontSize: 13, cursor: "pointer", border: `1px solid ${active ? COLORS.gold : COLORS.border}`, background: active ? COLORS.goldDim + "40" : COLORS.surface, color: active ? COLORS.goldLight : COLORS.textMuted, transition: "all 0.15s", fontFamily: "'Crimson Pro', Georgia, serif" }),
+    badge: (color) => ({ display: "inline-block", padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, background: color === "gold" ? COLORS.goldDim + "30" : color === "green" ? COLORS.successBg : COLORS.dangerBg, color: color === "gold" ? COLORS.gold : color === "green" ? COLORS.success : COLORS.danger }),
+    toast: { position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", background: COLORS.gold, color: COLORS.bg, padding: "12px 28px", borderRadius: 8, fontWeight: 700, fontSize: 14, zIndex: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" },
+    phaseDot: (phase) => {
+      const colors = { prep: COLORS.gold, primary: COLORS.honey, secondary: COLORS.amber, aging: COLORS.goldDim, bottling: COLORS.success, enjoy: COLORS.accentLight };
+      return { width: 10, height: 10, borderRadius: "50%", background: colors[phase] || COLORS.textDim, flexShrink: 0, marginTop: 5 };
+    },
+    timeline: { borderLeft: `2px solid ${COLORS.border}`, marginLeft: 4, paddingLeft: 20 },
+  };
+
+  // ─── Home Page ─────────────────────────────────────────────────────────
+  const HomePage = () => (
+    <div>
+      <div style={{ textAlign: "center", padding: "40px 0 20px" }}>
+        <div style={{ fontSize: 64, marginBottom: 10 }}>🍯</div>
+        <h1 style={{ ...styles.h1, margin: "0 0 8px" }}>Meadcraft</h1>
+        <p style={{ color: COLORS.textMuted, fontSize: 18, fontStyle: "italic", margin: 0 }}>Your Personal Mead Brewing Companion</p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
+        {[
+          { icon: "⚗️", title: "Build a Recipe", desc: "Choose sweetness, ABV & ingredients", action: () => { setRecipeBuilder(initRecipeBuilder()); setTab("recipe"); } },
+          { icon: "📋", title: "My Batches", desc: `${batches.length} batch${batches.length !== 1 ? "es" : ""} tracked`, action: () => setTab("batches") },
+          { icon: "📖", title: "Dictionary", desc: "Learn brewing jargon", action: () => setTab("dictionary") },
+          { icon: "🧪", title: "Quick Start", desc: "Beginner's first mead", action: () => { setRecipeBuilder(quickStartRecipe()); setTab("recipe"); } },
+        ].map((item, i) => (
+          <div key={i} onClick={item.action} style={{ ...styles.card, cursor: "pointer", textAlign: "center", transition: "all 0.2s", borderColor: COLORS.border }}>
+            <div style={{ fontSize: 36 }}>{item.icon}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.goldLight, marginTop: 8 }}>{item.title}</div>
+            <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4 }}>{item.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {batches.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <h2 style={{ ...styles.h2, fontSize: 18 }}>Active Batches</h2>
+          {batches.slice(0, 3).map(b => (
+            <BatchCard key={b.id} batch={b} onClick={() => { setViewingBatch(b); setTab("batchDetail"); }} />
+          ))}
+        </div>
+      )}
+
+      <div style={{ ...styles.card, marginTop: 28, borderColor: COLORS.goldDim + "40" }}>
+        <h3 style={{ ...styles.h3, margin: "0 0 10px" }}>💡 Tip for New Brewers</h3>
+        <p style={{ color: COLORS.textMuted, fontSize: 15, lineHeight: 1.7, margin: 0 }}>
+          Your #1 priority is <strong style={{ color: COLORS.gold }}>sanitation</strong>. Everything that touches your mead must be sanitized with a no-rinse sanitizer like Star San. 
+          Beyond that, mead is forgiving — honey, water, yeast, and patience are all you really need. Use the <strong style={{ color: COLORS.gold }}>Quick Start</strong> option above for your first batch!
+        </p>
+      </div>
+    </div>
+  );
+
+  // ─── Recipe Builder ────────────────────────────────────────────────────
+
+  function initRecipeBuilder() {
+    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Wildflower", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "90", batchName: "" };
+  }
+
+  function quickStartRecipe() {
+    return { step: 1, sweetness: "semi-sweet", abv: "standard", honeyType: "Orange Blossom", batchSize: "1", fruits: [], spices: [], extras: [], brewDays: "60", batchName: "My First Mead" };
+  }
+
+  const RecipeBuilderPage = () => {
+    const [rb, setRb] = useState(recipeBuilder || initRecipeBuilder());
+    const update = (k, v) => setRb(prev => ({ ...prev, [k]: v }));
+    const meadType = classifyMead(rb.fruits, rb.spices, rb.extras);
+    const abvTarget = ABV_RANGES.find(a => a.id === rb.abv)?.target || 11;
+    const honey = calcHoney(abvTarget, rb.sweetness, parseFloat(rb.batchSize) || 1);
+    const yeast = recommendYeast(abvTarget, rb.sweetness, rb.fruits);
+    const schedule = generateSchedule(rb.brewDays, abvTarget, rb.sweetness);
+    const warnings = getCompatibilityWarnings(rb);
+    const hasErrors = warnings.some(w => w.level === "error");
+
+    if (rb.step === 1) return (
+      <div>
+        <h1 style={styles.h1}>Build Your Recipe</h1>
+        <p style={{ textAlign: "center", color: COLORS.textMuted, marginBottom: 28 }}>Choose your style and let Meadcraft build the recipe</p>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Sweetness Level</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+            {SWEETNESS_LEVELS.map(s => (
+              <div key={s.id} onClick={() => update("sweetness", s.id)} style={{ ...styles.chip(rb.sweetness === s.id), padding: "10px 18px", flex: "1 1 auto", textAlign: "center", minWidth: 100 }}>
+                <div style={{ fontWeight: 700 }}>{s.name}</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{s.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <label style={styles.label}>Strength (ABV)</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+            {ABV_RANGES.map(a => (
+              <div key={a.id} onClick={() => update("abv", a.id)} style={{ ...styles.chip(rb.abv === a.id), padding: "10px 18px", flex: "1 1 auto", textAlign: "center", minWidth: 120 }}>
+                <div style={{ fontWeight: 700 }}>{a.name}</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{a.range}</div>
+              </div>
+            ))}
+          </div>
+
+          <label style={styles.label}>Batch Size (Gallons)</label>
+          <select style={styles.select} value={rb.batchSize} onChange={e => update("batchSize", e.target.value)}>
+            {["0.5", "1", "2", "3", "5"].map(v => <option key={v} value={v}>{v} gallon{v !== "1" ? "s" : ""}</option>)}
+          </select>
+        </div>
+
+        {/* Show ABV+Sweetness compatibility right away */}
+        <WarningPanel warnings={warnings.filter(w =>
+          w.title.includes("Incompatible") || w.title.includes("Tricky Combo") || w.title.includes("Hot Alcohol")
+        )} />
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+          <button style={styles.btnPrimary} onClick={() => update("step", 2)}>Next: Ingredients →</button>
+        </div>
+      </div>
+    );
+
+    if (rb.step === 2) return (
+      <div>
+        <h1 style={styles.h1}>Ingredients</h1>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Honey Variety</label>
+          <select style={styles.select} value={rb.honeyType} onChange={e => update("honeyType", e.target.value)}>
+            {HONEY_TYPES.map(h => <option key={h.name} value={h.name}>{h.name} — {h.flavor}</option>)}
+          </select>
+          <p style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 6 }}>
+            {HONEY_TYPES.find(h => h.name === rb.honeyType)?.notes}
+          </p>
+        </div>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Fruits (optional — makes it a Melomel)</label>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {FRUIT_ADDITIONS.map(f => (
+              <span key={f} onClick={() => update("fruits", rb.fruits.includes(f) ? rb.fruits.filter(x => x !== f) : [...rb.fruits, f])} style={styles.chip(rb.fruits.includes(f))}>{f}</span>
+            ))}
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Spices & Botanicals (optional — makes it a Metheglin)</label>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {SPICE_ADDITIONS.map(s => (
+              <span key={s} onClick={() => update("spices", rb.spices.includes(s) ? rb.spices.filter(x => x !== s) : [...rb.spices, s])} style={styles.chip(rb.spices.includes(s))}>{s}</span>
+            ))}
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Special Additions</label>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {["caramelized", "maple", "malt"].map(e => (
+              <span key={e} onClick={() => update("extras", rb.extras.includes(e) ? rb.extras.filter(x => x !== e) : [...rb.extras, e])} style={styles.chip(rb.extras.includes(e))}>
+                {e === "caramelized" ? "🫕 Caramelized Honey (Bochet)" : e === "maple" ? "🍁 Maple Syrup" : "🍺 Malt (Braggot)"}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ ...styles.card, borderColor: COLORS.gold + "40", background: COLORS.goldDim + "10" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span style={{ fontSize: 28 }}>{meadType.icon}</span>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.goldLight }}>{meadType.name}</div>
+              <div style={{ fontSize: 13, color: COLORS.textMuted }}>{meadType.desc}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* LIVE COMPATIBILITY WARNINGS */}
+        <WarningPanel warnings={warnings} />
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+          <button style={styles.btnSecondary} onClick={() => update("step", 1)}>← Back</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {hasErrors && <span style={{ fontSize: 12, color: COLORS.danger, fontWeight: 600 }}>Fix problems before continuing</span>}
+            <button
+              style={{ ...styles.btnPrimary, opacity: hasErrors ? 0.4 : 1, cursor: hasErrors ? "not-allowed" : "pointer" }}
+              onClick={() => !hasErrors && update("step", 3)}
+            >Next: Review →</button>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (rb.step === 3) return (
+      <div>
+        <h1 style={styles.h1}>Your Recipe</h1>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <span style={{ fontSize: 48 }}>{meadType.icon}</span>
+          <h2 style={{ ...styles.h2, marginTop: 8, marginBottom: 4 }}>{meadType.name}</h2>
+          <p style={{ color: COLORS.textMuted }}>{meadType.desc}</p>
+        </div>
+
+        <div style={styles.card}>
+          <label style={styles.label}>Batch Name (optional)</label>
+          <input style={styles.input} value={rb.batchName} onChange={e => update("batchName", e.target.value)} placeholder={`e.g. "Autumn Gold" or "Batch #1"`} />
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={{ ...styles.h3, marginTop: 0 }}>📊 Recipe Specs</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              ["Batch Size", `${rb.batchSize} gal`],
+              ["Target ABV", `~${abvTarget}%`],
+              ["Sweetness", SWEETNESS_LEVELS.find(s => s.id === rb.sweetness)?.name],
+              ["Est. OG", honey.og],
+              ["Honey Needed", `${honey.lbs} lbs`],
+              ["Honey Type", rb.honeyType],
+            ].map(([k, v]) => (
+              <div key={k}>
+                <div style={{ fontSize: 11, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 1 }}>{k}</div>
+                <div style={{ fontSize: 18, fontWeight: 600, color: COLORS.goldLight }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {(rb.fruits.length > 0 || rb.spices.length > 0) && (
+          <div style={styles.card}>
+            <h3 style={{ ...styles.h3, marginTop: 0 }}>🧪 Additions</h3>
+            {rb.fruits.length > 0 && <p style={{ color: COLORS.text, marginBottom: 6 }}><strong>Fruits:</strong> {rb.fruits.join(", ")}</p>}
+            {rb.spices.length > 0 && <p style={{ color: COLORS.text, margin: 0 }}><strong>Spices:</strong> {rb.spices.join(", ")}</p>}
+            <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8, fontStyle: "italic" }}>
+              Fruit: use 2–4 lbs per gallon in secondary. Spices: start small — you can always add more!
+            </p>
+          </div>
+        )}
+
+        <div style={{ ...styles.card, borderColor: COLORS.gold + "30" }}>
+          <h3 style={{ ...styles.h3, marginTop: 0 }}>🧫 Recommended Yeast</h3>
+          <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.goldLight }}>{yeast.name}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, fontSize: 14 }}>
+            <div><span style={{ color: COLORS.textMuted }}>Tolerance:</span> <span style={{ color: COLORS.gold }}>{yeast.tolerance}%</span></div>
+            <div><span style={{ color: COLORS.textMuted }}>Temp:</span> <span style={{ color: COLORS.gold }}>{yeast.tempRange}</span></div>
+            <div style={{ gridColumn: "1 / -1" }}><span style={{ color: COLORS.textMuted }}>Character:</span> <span style={{ color: COLORS.text }}>{yeast.character}</span></div>
+          </div>
+          <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8, fontStyle: "italic" }}>{yeast.notes}</p>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={{ ...styles.h3, marginTop: 0 }}>📅 Brewing Timeline</h3>
+          <label style={styles.label}>How many days until bottling?</label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
+            <input type="range" min="30" max="365" value={rb.brewDays} onChange={e => update("brewDays", e.target.value)} style={{ flex: 1, accentColor: COLORS.gold }} />
+            <input type="number" style={{ ...styles.input, width: 70, textAlign: "center" }} value={rb.brewDays} onChange={e => update("brewDays", e.target.value)} />
+            <span style={{ color: COLORS.textMuted, fontSize: 14 }}>days</span>
+          </div>
+          <p style={{ fontSize: 13, color: COLORS.textMuted, fontStyle: "italic" }}>
+            {parseInt(rb.brewDays) < 45 ? "⚡ Fast turnaround! Expect a young, rough mead. Best for sessions/hydromels." :
+              parseInt(rb.brewDays) < 90 ? "⏱️ Good timeline for a standard mead." :
+                parseInt(rb.brewDays) < 180 ? "🕰️ Nice! Extra aging time means smoother results." :
+                  "🏆 Patient brewer! Long aging produces excellent mead."}
+          </p>
+        </div>
+
+        {/* Final compatibility check including timeline */}
+        <WarningPanel warnings={warnings} />
+
+        <div style={styles.card}>
+          <h3 style={{ ...styles.h3, marginTop: 0 }}>🛒 Shopping List</h3>
+          <div style={{ fontSize: 15, lineHeight: 2, color: COLORS.text }}>
+            {[
+              `${honey.lbs} lbs ${rb.honeyType} honey`,
+              `${rb.batchSize} gallon${rb.batchSize !== "1" ? "s" : ""} spring water (non-chlorinated)`,
+              `1 packet ${yeast.name}`,
+              `Fermaid-O or Fermaid-K (yeast nutrient)`,
+              `1 gallon glass carboy or food-safe bucket`,
+              `Airlock + bung`,
+              `Star San (sanitizer)`,
+              `Hydrometer`,
+              ...(rb.fruits.map(f => `${f} (2–4 lbs/gal in secondary)`)),
+              ...(rb.spices.map(s => `${s} (start small)`)),
+              ...(rb.sweetness !== "dry" ? ["Potassium sorbate (for stabilizing)", "Campden tablets"] : []),
+              `Bottles + corks or caps`,
+              `Auto-siphon + tubing`,
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: COLORS.goldDim }}>•</span> {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, gap: 12, flexWrap: "wrap" }}>
+          <button style={styles.btnSecondary} onClick={() => update("step", 2)}>← Back</button>
+          <button style={{ ...styles.btnPrimary, opacity: hasErrors ? 0.4 : 1, cursor: hasErrors ? "not-allowed" : "pointer" }} onClick={() => !hasErrors && saveBatch()}>✓ Start This Batch</button>
+        </div>
+      </div>
+    );
+
+    const saveBatch = () => {
+      const batch = {
+        id: generateId(),
+        name: rb.batchName || `${meadType.name} — ${new Date().toLocaleDateString()}`,
+        meadType, sweetness: rb.sweetness, abv: rb.abv, abvTarget,
+        honeyType: rb.honeyType, batchSize: rb.batchSize,
+        fruits: [...rb.fruits], spices: [...rb.spices], extras: [...rb.extras],
+        honeyLbs: honey.lbs, og: honey.og, yeast,
+        schedule, brewDays: rb.brewDays,
+        createdAt: new Date().toISOString(),
+        completedSteps: [],
+        notes: [],
+      };
+      setBatches(prev => [batch, ...prev]);
+      setViewingBatch(batch);
+      setTab("batchDetail");
+      showToast("Batch saved! Happy brewing 🍯");
+    };
+  };
+
+  // ─── Batch List ────────────────────────────────────────────────────────
+
+  const BatchCard = ({ batch, onClick }) => {
+    const completed = batch.completedSteps?.length || 0;
+    const total = batch.schedule?.length || 1;
+    const pct = Math.round((completed / total) * 100);
+    const daysOld = Math.floor((Date.now() - new Date(batch.createdAt).getTime()) / 86400000);
+
+    return (
+      <div onClick={onClick} style={{ ...styles.card, cursor: "pointer", display: "flex", gap: 16, alignItems: "center" }}>
+        <div style={{ fontSize: 36 }}>{batch.meadType?.icon || "🍯"}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: COLORS.goldLight }}>{batch.name}</div>
+          <div style={{ fontSize: 13, color: COLORS.textMuted }}>{batch.meadType?.name} · Day {daysOld} · {batch.batchSize} gal</div>
+          <div style={{ marginTop: 6, background: COLORS.surface, borderRadius: 4, height: 6, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${COLORS.gold}, ${COLORS.amber})`, borderRadius: 4, transition: "width 0.3s" }} />
+          </div>
+        </div>
+        <div style={{ color: COLORS.textDim, fontSize: 13 }}>{pct}%</div>
+      </div>
+    );
+  };
+
+  const BatchListPage = () => (
+    <div>
+      <h1 style={styles.h1}>My Batches</h1>
+      {batches.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.textMuted }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🫙</div>
+          <p>No batches yet. Build a recipe to get started!</p>
+          <button style={{ ...styles.btnPrimary, marginTop: 12 }} onClick={() => { setRecipeBuilder(initRecipeBuilder()); setTab("recipe"); }}>Build a Recipe</button>
+        </div>
+      ) : (
+        batches.map(b => <BatchCard key={b.id} batch={b} onClick={() => { setViewingBatch(b); setTab("batchDetail"); }} />)
+      )}
+    </div>
+  );
+
+  // ─── Batch Detail ──────────────────────────────────────────────────────
+
+  const BatchDetailPage = () => {
+    const [batch, setBatch] = useState(viewingBatch);
+    const [newNote, setNewNote] = useState("");
+    const [showDelete, setShowDelete] = useState(false);
+
+    if (!batch) return null;
+
+    const daysOld = Math.floor((Date.now() - new Date(batch.createdAt).getTime()) / 86400000);
+
+    const toggleStep = (idx) => {
+      const updated = { ...batch };
+      if (updated.completedSteps.includes(idx)) {
+        updated.completedSteps = updated.completedSteps.filter(i => i !== idx);
+      } else {
+        updated.completedSteps = [...updated.completedSteps, idx];
+      }
+      setBatch(updated);
+      setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+    };
+
+    const addNote = () => {
+      if (!newNote.trim()) return;
+      const updated = { ...batch, notes: [...(batch.notes || []), { text: newNote, date: new Date().toISOString() }] };
+      setBatch(updated);
+      setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+      setNewNote("");
+      showToast("Note saved");
+    };
+
+    const deleteBatch = () => {
+      setBatches(prev => prev.filter(b => b.id !== batch.id));
+      setTab("batches");
+      showToast("Batch deleted");
+    };
+
+    return (
+      <div>
+        <button style={{ ...styles.btnSecondary, marginBottom: 16, fontSize: 13, padding: "6px 14px" }} onClick={() => setTab("batches")}>← All Batches</button>
+        <div style={{ textAlign: "center" }}>
+          <span style={{ fontSize: 48 }}>{batch.meadType?.icon}</span>
+          <h1 style={{ ...styles.h1, marginTop: 8 }}>{batch.name}</h1>
+          <p style={{ color: COLORS.textMuted }}>{batch.meadType?.name} · Day {daysOld}</p>
+        </div>
+
+        <div style={{ ...styles.card, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, textAlign: "center" }}>
+          {[
+            ["ABV", `~${batch.abvTarget}%`],
+            ["OG", batch.og],
+            ["Honey", `${batch.honeyLbs} lbs`],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <div style={{ fontSize: 11, color: COLORS.textDim, textTransform: "uppercase" }}>{k}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.goldLight }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={{ ...styles.h3, marginTop: 0 }}>Yeast: {batch.yeast?.name}</h3>
+          <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>{batch.yeast?.notes}</p>
+        </div>
+
+        <h2 style={styles.h2}>📅 Schedule</h2>
+        <div style={styles.timeline}>
+          {batch.schedule?.map((step, idx) => {
+            const done = batch.completedSteps?.includes(idx);
+            const isToday = step.day <= daysOld && (idx === batch.schedule.length - 1 || batch.schedule[idx + 1].day > daysOld);
+            return (
+              <div key={idx} style={{ marginBottom: 16, position: "relative" }}>
+                <div style={{ position: "absolute", left: -26, ...styles.phaseDot(step.phase), border: isToday ? `2px solid ${COLORS.goldLight}` : "none", width: isToday ? 14 : 10, height: isToday ? 14 : 10, marginTop: isToday ? 3 : 5 }} />
+                <div onClick={() => toggleStep(idx)} style={{ cursor: "pointer", opacity: done ? 0.5 : 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: done ? COLORS.success : COLORS.goldLight, textDecoration: done ? "line-through" : "none" }}>
+                      {step.label}
+                    </span>
+                    {isToday && <span style={styles.badge("gold")}>Current</span>}
+                    {done && <span style={styles.badge("green")}>Done</span>}
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    {step.tasks.map((t, ti) => (
+                      <div key={ti} style={{ fontSize: 14, color: COLORS.textMuted, paddingLeft: 8, lineHeight: 1.8 }}>
+                        <span style={{ color: COLORS.goldDim, marginRight: 6 }}>•</span>{t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <h2 style={styles.h2}>📝 Brew Notes</h2>
+        <div style={styles.card}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input style={{ ...styles.input, flex: 1 }} value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Gravity reading, taste notes, observations..." onKeyDown={e => e.key === "Enter" && addNote()} />
+            <button style={styles.btnPrimary} onClick={addNote}>Add</button>
+          </div>
+          {batch.notes?.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              {batch.notes.map((n, i) => (
+                <div key={i} style={{ padding: "8px 0", borderBottom: `1px solid ${COLORS.border}`, fontSize: 14 }}>
+                  <div style={{ color: COLORS.textDim, fontSize: 11, marginBottom: 2 }}>{new Date(n.date).toLocaleDateString()} {new Date(n.date).toLocaleTimeString()}</div>
+                  <div style={{ color: COLORS.text }}>{n.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          {!showDelete ? (
+            <button style={styles.btnDanger} onClick={() => setShowDelete(true)}>Delete Batch</button>
+          ) : (
+            <div style={{ ...styles.card, borderColor: COLORS.danger }}>
+              <p style={{ color: COLORS.danger, fontWeight: 600 }}>Are you sure? This cannot be undone.</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={styles.btnDanger} onClick={deleteBatch}>Yes, Delete</button>
+                <button style={styles.btnSecondary} onClick={() => setShowDelete(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Dictionary ────────────────────────────────────────────────────────
+
+  const DictionaryPage = () => {
+    const filtered = DICTIONARY.filter(d =>
+      d.term.toLowerCase().includes(dictSearch.toLowerCase()) ||
+      d.def.toLowerCase().includes(dictSearch.toLowerCase())
+    );
+
+    return (
+      <div>
+        <h1 style={styles.h1}>Brewer's Dictionary</h1>
+        <p style={{ textAlign: "center", color: COLORS.textMuted, marginBottom: 20 }}>Tap any term to learn what it means</p>
+        <input style={{ ...styles.input, marginBottom: 20 }} value={dictSearch} onChange={e => setDictSearch(e.target.value)} placeholder="Search terms..." />
+        {filtered.map((d, i) => (
+          <div key={i} style={{ ...styles.card, padding: 16, marginBottom: 8 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.gold }}>{d.term}</div>
+            <div style={{ fontSize: 14, color: COLORS.textMuted, marginTop: 4, lineHeight: 1.6 }}>{d.def}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ─── Yeast Guide ───────────────────────────────────────────────────────
+
+  const YeastGuidePage = () => (
+    <div>
+      <h1 style={styles.h1}>Yeast Guide</h1>
+      <p style={{ textAlign: "center", color: COLORS.textMuted, marginBottom: 20 }}>Common wine/mead yeasts and their characteristics</p>
+      {YEAST_DB.map(y => (
+        <div key={y.id} style={styles.card}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.goldLight }}>{y.name}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, fontSize: 14 }}>
+            <div><span style={{ color: COLORS.textDim }}>Tolerance:</span> <span style={{ color: COLORS.gold }}>{y.tolerance}%</span></div>
+            <div><span style={{ color: COLORS.textDim }}>Temp Range:</span> <span style={{ color: COLORS.gold }}>{y.tempRange}</span></div>
+            <div><span style={{ color: COLORS.textDim }}>Character:</span> <span style={{ color: COLORS.text }}>{y.character}</span></div>
+            <div><span style={{ color: COLORS.textDim }}>Best For:</span> <span style={{ color: COLORS.text }}>{y.best}</span></div>
+          </div>
+          <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8, fontStyle: "italic" }}>{y.notes}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  // ─── Render ────────────────────────────────────────────────────────────
+
+  const pages = { home: HomePage, recipe: RecipeBuilderPage, batches: BatchListPage, batchDetail: BatchDetailPage, dictionary: DictionaryPage, yeast: YeastGuidePage };
+  const Page = pages[tab] || HomePage;
+
+  return (
+    <div style={styles.app}>
+      <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+      <div style={styles.container}>
+        <Page />
+      </div>
+
+      {/* Bottom Nav */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, zIndex: 50 }}>
+        <div style={{ display: "flex", justifyContent: "center", maxWidth: 500, margin: "0 auto" }}>
+          {[
+            { id: "home", icon: "🏠", label: "Home" },
+            { id: "recipe", icon: "⚗️", label: "Recipe" },
+            { id: "batches", icon: "📋", label: "Batches" },
+            { id: "yeast", icon: "🧫", label: "Yeast" },
+            { id: "dictionary", icon: "📖", label: "Dict" },
+          ].map(n => (
+            <div key={n.id} onClick={() => { if (n.id === "recipe" && !recipeBuilder) setRecipeBuilder(initRecipeBuilder()); setTab(n.id); }}
+              style={{ flex: 1, textAlign: "center", padding: "10px 0 8px", cursor: "pointer", color: tab === n.id ? COLORS.gold : COLORS.textDim, transition: "color 0.2s" }}>
+              <div style={{ fontSize: 20 }}>{n.icon}</div>
+              <div style={{ fontSize: 10, marginTop: 2, fontWeight: 600, letterSpacing: 0.5 }}>{n.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toastMsg && <div style={styles.toast}>{toastMsg}</div>}
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(MeadBrewingApp));
+</script>
+</body>
+</html>
