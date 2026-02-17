@@ -1544,8 +1544,8 @@ function MeadBrewingApp() {
 
         <div style={{ ...styles.card, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, textAlign: "center" }}>
           {[
-            ["ABV", `~${batch.abvTarget}%`],
-            ["OG", batch.og],
+            ["Est. ABV", `~${batch.abvTarget}%`],
+            ["Est. OG", batch.og],
             ["Honey", `${batch.honeyLbs} lbs`],
           ].map(([k, v]) => (
             <div key={k}>
@@ -1554,6 +1554,70 @@ function MeadBrewingApp() {
             </div>
           ))}
         </div>
+
+        {skillLevel !== "novice" && (
+          <div style={styles.card}>
+            <h3 style={{ ...styles.h3, marginTop: 0 }}>📏 Actual Gravity Readings</h3>
+            <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 12 }}>
+              {skillLevel === "intermediate" 
+                ? "Enter your real hydrometer readings for more accurate ABV tracking."
+                : "Record OG/FG for precise ABV calculation."}
+            </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 120 }}>
+                <label style={{ ...styles.label, fontSize: 11 }}>Actual OG</label>
+                <input
+                  type="text" inputMode="decimal"
+                  style={{ ...styles.input, textAlign: "center", fontSize: 18, fontWeight: 700 }}
+                  value={batch.actualOG || ""}
+                  placeholder={batch.og || "1.100"}
+                  onChange={e => {
+                    const updated = { ...batch, actualOG: e.target.value };
+                    setBatch(updated);
+                    setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: 120 }}>
+                <label style={{ ...styles.label, fontSize: 11 }}>Actual FG</label>
+                <input
+                  type="text" inputMode="decimal"
+                  style={{ ...styles.input, textAlign: "center", fontSize: 18, fontWeight: 700 }}
+                  value={batch.actualFG || ""}
+                  placeholder="1.000"
+                  onChange={e => {
+                    const updated = { ...batch, actualFG: e.target.value };
+                    setBatch(updated);
+                    setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+                  }}
+                />
+              </div>
+            </div>
+            {(() => {
+              const og = parseFloat(batch.actualOG);
+              const fg = parseFloat(batch.actualFG);
+              if (og > 0 && fg > 0 && og > fg) {
+                const actualABV = ((og - fg) * 131.25).toFixed(1);
+                return (
+                  <div style={{ marginTop: 12, padding: "10px 14px", background: COLORS.goldDim + "20", borderRadius: 8, border: `1px solid ${COLORS.goldDim}30`, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 1 }}>Actual ABV</div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: COLORS.goldLight }}>{actualABV}%</div>
+                    <div style={{ fontSize: 12, color: COLORS.textMuted }}>({og.toFixed(3)} → {fg.toFixed(3)}) × 131.25</div>
+                  </div>
+                );
+              }
+              if (og > 0 && !fg) {
+                const maxABV = ((og - 0.990) * 131.25).toFixed(1);
+                return (
+                  <p style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 8, fontStyle: "italic" }}>
+                    With OG of {og.toFixed(3)}, max possible ABV is ~{maxABV}% (if it ferments completely dry). Enter FG when fermentation is done for your actual ABV.
+                  </p>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        )}
 
         <div style={styles.card}>
           <h3 style={{ ...styles.h3, marginTop: 0 }}>Yeast: {batch.yeast?.name}</h3>
@@ -1612,9 +1676,11 @@ function MeadBrewingApp() {
                 <div
                   onClick={() => toggleExpand(idx)}
                   style={{
-                    cursor: "pointer", padding: "12px 14px", borderRadius: 8,
+                    cursor: "pointer", padding: "12px 14px",
+                    borderRadius: isExpanded ? "8px 8px 0 0" : 8,
                     background: isExpanded ? COLORS.surface : "transparent",
                     border: isExpanded ? `1px solid ${COLORS.border}` : "1px solid transparent",
+                    borderBottom: isExpanded ? "none" : undefined,
                     transition: "all 0.15s",
                   }}
                 >
@@ -1632,13 +1698,19 @@ function MeadBrewingApp() {
                   </div>
                 </div>
                 {isExpanded && (
-                  <div style={{ padding: "8px 14px 14px 28px" }}>
+                  <div style={{
+                    padding: "8px 14px 14px 28px",
+                    background: COLORS.surface,
+                    border: `1px solid ${COLORS.border}`,
+                    borderTop: "none",
+                    borderRadius: "0 0 8px 8px",
+                  }}>
                     {step.tasks.map((t, ti) => {
                       const taskDone = isTaskDone(idx, ti);
                       return (
                         <div
                           key={ti}
-                          onClick={(e) => { e.stopPropagation(); toggleTask(idx, ti); }}
+                          onClick={() => toggleTask(idx, ti)}
                           style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "6px 0", cursor: "pointer" }}
                         >
                           <div style={{
