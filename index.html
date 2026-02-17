@@ -935,6 +935,9 @@ function MeadBrewingApp() {
   const [skillLevel, setSkillLevel] = useState(() => {
     try { return localStorage.getItem("meadcraft_skill") || "novice"; } catch { return "novice"; }
   });
+  const [expandedSteps, setExpandedSteps] = useState({});
+  const [batchDetailNote, setBatchDetailNote] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem("meadcraft_skill", skillLevel); } catch {}
@@ -1014,7 +1017,7 @@ function MeadBrewingApp() {
         <div style={{ marginTop: 28 }}>
           <h2 style={{ ...styles.h2, fontSize: 18 }}>Active Batches</h2>
           {batches.slice(0, 3).map(b => (
-            <BatchCard key={b.id} batch={b} onClick={() => { setViewingBatch(b); setTab("batchDetail"); }} />
+            <BatchCard key={b.id} batch={b} onClick={() => { setViewingBatch(b); setExpandedSteps({}); setBatchDetailNote(""); setShowDeleteConfirm(false); setTab("batchDetail"); }} />
           ))}
         </div>
       )}
@@ -1453,7 +1456,7 @@ function MeadBrewingApp() {
           <button style={{ ...styles.btnPrimary, marginTop: 12 }} onClick={() => { setRecipeBuilder(initRecipeBuilder()); setTab("recipe"); }}>Build a Recipe</button>
         </div>
       ) : (
-        batches.map(b => <BatchCard key={b.id} batch={b} onClick={() => { setViewingBatch(b); setTab("batchDetail"); }} />)
+        batches.map(b => <BatchCard key={b.id} batch={b} onClick={() => { setViewingBatch(b); setExpandedSteps({}); setBatchDetailNote(""); setShowDeleteConfirm(false); setTab("batchDetail"); }} />)
       )}
     </div>
   );
@@ -1461,39 +1464,35 @@ function MeadBrewingApp() {
   // ─── Batch Detail ──────────────────────────────────────────────────────
 
   const BatchDetailPage = () => {
-    const [batch, setBatch] = useState(viewingBatch);
-    const [newNote, setNewNote] = useState("");
-    const [showDelete, setShowDelete] = useState(false);
-    const [expandedSteps, setExpandedSteps] = useState({});
-
+    const batch = viewingBatch;
     if (!batch) return null;
 
     const daysOld = Math.floor((Date.now() - new Date(batch.createdAt).getTime()) / 86400000);
 
+    const updateBatch = (updated) => {
+      setViewingBatch(updated);
+      setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+    };
+
     const toggleTask = (stepIdx, taskIdx) => {
       const key = `${stepIdx}-${taskIdx}`;
-      const updated = { ...batch };
-      const completed = Array.isArray(updated.completedSteps) ? [...updated.completedSteps] : [];
+      const completed = Array.isArray(batch.completedSteps) ? [...batch.completedSteps] : [];
       if (completed.includes(key)) {
-        updated.completedSteps = completed.filter(k => k !== key);
+        updateBatch({ ...batch, completedSteps: completed.filter(k => k !== key) });
       } else {
-        updated.completedSteps = [...completed, key];
+        updateBatch({ ...batch, completedSteps: [...completed, key] });
       }
-      setBatch(updated);
-      setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
     };
 
     const isTaskDone = (stepIdx, taskIdx) => {
       const key = `${stepIdx}-${taskIdx}`;
       const completed = batch.completedSteps || [];
-      // Support legacy format (just step indexes) and new format ("stepIdx-taskIdx")
       return completed.includes(key) || completed.includes(stepIdx);
     };
 
     const getStepProgress = (stepIdx, taskCount) => {
       let done = 0;
       const completed = batch.completedSteps || [];
-      // Legacy: if step index is in array, count all done
       if (completed.includes(stepIdx)) return taskCount;
       for (let t = 0; t < taskCount; t++) {
         if (completed.includes(`${stepIdx}-${t}`)) done++;
@@ -1506,17 +1505,16 @@ function MeadBrewingApp() {
     };
 
     const addNote = () => {
-      if (!newNote.trim()) return;
-      const updated = { ...batch, notes: [...(batch.notes || []), { text: newNote, date: new Date().toISOString() }] };
-      setBatch(updated);
-      setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
-      setNewNote("");
+      if (!batchDetailNote.trim()) return;
+      updateBatch({ ...batch, notes: [...(batch.notes || []), { text: batchDetailNote, date: new Date().toISOString() }] });
+      setBatchDetailNote("");
       showToast("Note saved");
     };
 
     const deleteBatch = () => {
       setBatches(prev => prev.filter(b => b.id !== batch.id));
       setTab("batches");
+      setShowDeleteConfirm(false);
       showToast("Batch deleted");
     };
 
@@ -1572,9 +1570,7 @@ function MeadBrewingApp() {
                   value={batch.actualOG || ""}
                   placeholder={batch.og || "1.100"}
                   onChange={e => {
-                    const updated = { ...batch, actualOG: e.target.value };
-                    setBatch(updated);
-                    setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+                    updateBatch({ ...batch, actualOG: e.target.value });
                   }}
                 />
               </div>
@@ -1586,9 +1582,7 @@ function MeadBrewingApp() {
                   value={batch.actualFG || ""}
                   placeholder="1.000"
                   onChange={e => {
-                    const updated = { ...batch, actualFG: e.target.value };
-                    setBatch(updated);
-                    setBatches(prev => prev.map(b => b.id === updated.id ? updated : b));
+                    updateBatch({ ...batch, actualFG: e.target.value });
                   }}
                 />
               </div>
@@ -1673,26 +1667,27 @@ function MeadBrewingApp() {
             return (
               <div key={idx} style={{ marginBottom: 8, position: "relative" }}>
                 <div style={{ position: "absolute", left: -26, ...styles.phaseDot(step.phase), border: isToday ? `2px solid ${COLORS.goldLight}` : "none", width: isToday ? 14 : 10, height: isToday ? 14 : 10, marginTop: isToday ? 14 : 16 }} />
-                <div
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: isExpanded ? "8px 8px 0 0" : 8,
-                    background: isExpanded ? COLORS.surface : "transparent",
-                    border: isExpanded ? `1px solid ${COLORS.border}` : "1px solid transparent",
-                    borderBottom: isExpanded ? "none" : undefined,
-                    transition: "all 0.15s",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span
+                <div style={{
+                  borderRadius: 8,
+                  background: isExpanded ? COLORS.surface : "transparent",
+                  border: isExpanded ? `1px solid ${COLORS.border}` : "1px solid transparent",
+                  transition: "all 0.15s",
+                }}>
+                  {/* HEADER ROW — no onClick on this div */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", flexWrap: "wrap" }}>
+                    {/* ONLY the arrow is clickable for expand/collapse */}
+                    <div
                       onClick={() => toggleExpand(idx)}
                       style={{
-                        color: COLORS.textDim, fontSize: 14, cursor: "pointer",
-                        transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                        padding: "4px 6px", borderRadius: 4, userSelect: "none",
-                        background: "transparent",
+                        cursor: "pointer", padding: "6px 8px", marginLeft: -6, marginRight: -2,
+                        borderRadius: 4, userSelect: "none", WebkitTapHighlightColor: "transparent",
                       }}
-                    >▶</span>
+                    >
+                      <span style={{
+                        color: COLORS.gold, fontSize: 13, display: "inline-block",
+                        transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                      }}>▶</span>
+                    </div>
                     <span style={{ fontSize: 15, fontWeight: 700, color: allDone ? COLORS.success : isToday ? COLORS.goldLight : isFuture ? COLORS.text : COLORS.textMuted, flex: 1 }}>
                       {step.label}
                     </span>
@@ -1703,42 +1698,42 @@ function MeadBrewingApp() {
                       <span style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600 }}>{doneTasks}/{taskCount}</span>
                     )}
                   </div>
-                </div>
-                {isExpanded && (
-                  <div style={{
-                    padding: "8px 14px 14px 28px",
-                    background: COLORS.surface,
-                    border: `1px solid ${COLORS.border}`,
-                    borderTop: "none",
-                    borderRadius: "0 0 8px 8px",
-                  }}>
-                    {step.tasks.map((t, ti) => {
-                      const taskDone = isTaskDone(idx, ti);
-                      return (
-                        <div
-                          key={ti}
-                          onClick={() => toggleTask(idx, ti)}
-                          style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "6px 0", cursor: "pointer" }}
-                        >
-                          <div style={{
-                            width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: 1,
-                            border: `2px solid ${taskDone ? COLORS.success : COLORS.border}`,
-                            background: taskDone ? COLORS.success : "transparent",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            transition: "all 0.15s",
-                          }}>
-                            {taskDone && <span style={{ color: COLORS.bg, fontSize: 12, fontWeight: 900 }}>✓</span>}
+                  {/* TASK LIST — each task has its own checkbox click */}
+                  {isExpanded && (
+                    <div style={{ padding: "0 14px 14px 38px", borderTop: `1px solid ${COLORS.border}` }}>
+                      {step.tasks.map((t, ti) => {
+                        const taskDone = isTaskDone(idx, ti);
+                        return (
+                          <div
+                            key={ti}
+                            onClick={() => toggleTask(idx, ti)}
+                            style={{
+                              display: "flex", alignItems: "flex-start", gap: 10,
+                              padding: "8px 0", cursor: "pointer",
+                              borderBottom: ti < step.tasks.length - 1 ? `1px solid ${COLORS.border}40` : "none",
+                              WebkitTapHighlightColor: "transparent",
+                            }}
+                          >
+                            <div style={{
+                              width: 22, height: 22, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                              border: `2px solid ${taskDone ? COLORS.success : COLORS.goldDim}`,
+                              background: taskDone ? COLORS.success : "transparent",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "all 0.15s",
+                            }}>
+                              {taskDone && <span style={{ color: COLORS.bg, fontSize: 13, fontWeight: 900 }}>✓</span>}
+                            </div>
+                            <span style={{
+                              fontSize: 14, color: taskDone ? COLORS.textDim : COLORS.text,
+                              textDecoration: taskDone ? "line-through" : "none",
+                              lineHeight: 1.6, transition: "all 0.15s",
+                            }}>{t}</span>
                           </div>
-                          <span style={{
-                            fontSize: 14, color: taskDone ? COLORS.textDim : COLORS.textMuted,
-                            textDecoration: taskDone ? "line-through" : "none",
-                            lineHeight: 1.6, transition: "all 0.15s",
-                          }}>{t}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -1747,7 +1742,7 @@ function MeadBrewingApp() {
         <h2 style={styles.h2}>📝 Brew Notes</h2>
         <div style={styles.card}>
           <div style={{ display: "flex", gap: 8 }}>
-            <input style={{ ...styles.input, flex: 1 }} value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Gravity reading, taste notes, observations..." onKeyDown={e => e.key === "Enter" && addNote()} />
+            <input style={{ ...styles.input, flex: 1 }} value={batchDetailNote} onChange={e => setBatchDetailNote(e.target.value)} placeholder="Gravity reading, taste notes, observations..." onKeyDown={e => e.key === "Enter" && addNote()} />
             <button style={styles.btnPrimary} onClick={addNote}>Add</button>
           </div>
           {batch.notes?.length > 0 && (
@@ -1763,14 +1758,14 @@ function MeadBrewingApp() {
         </div>
 
         <div style={{ marginTop: 24 }}>
-          {!showDelete ? (
-            <button style={styles.btnDanger} onClick={() => setShowDelete(true)}>Delete Batch</button>
+          {!showDeleteConfirm ? (
+            <button style={styles.btnDanger} onClick={() => setShowDeleteConfirm(true)}>Delete Batch</button>
           ) : (
             <div style={{ ...styles.card, borderColor: COLORS.danger }}>
               <p style={{ color: COLORS.danger, fontWeight: 600 }}>Are you sure? This cannot be undone.</p>
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={styles.btnDanger} onClick={deleteBatch}>Yes, Delete</button>
-                <button style={styles.btnSecondary} onClick={() => setShowDelete(false)}>Cancel</button>
+                <button style={styles.btnSecondary} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
               </div>
             </div>
           )}
